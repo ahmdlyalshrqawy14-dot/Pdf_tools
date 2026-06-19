@@ -109,6 +109,7 @@
     <button class="nav-btn" onclick="switchTab('pdf', event)">📄 ملفات PDF</button>
     <button class="nav-btn" onclick="switchTab('audio', event)">🎵 الصوت</button>
     <button class="nav-btn" onclick="switchTab('video', event)">🎬 الفيديو</button>
+    <button class="nav-btn" onclick="switchTab('html2pdf', event)">🌐 HTML → PDF</button>
     <button class="nav-btn" onclick="switchTab('libraries', event)" style="border-color: var(--primary);">⚙️ المكتبات (هام)</button>
   </nav>
 
@@ -326,6 +327,27 @@
             <div class="progress-text" id="video-text">جاري المعالجة...</div>
           </div>
           <div class="results-area" id="video-results"></div>
+        </div>
+      </div>
+    </div>
+    <div id="panel-html2pdf" class="panel">
+      <div class="card">
+        <h2>🌐 تحويل HTML إلى PDF</h2>
+        <p class="desc">ارفع ملف HTML (.html أو .htm) أو ملف صفحة محفوظة من المتصفح (.mhtml أو .mht) وسيتم تحويله إلى PDF — المعالجة بالكامل محلياً عبر متصفحك.</p>
+        <div class="alert info">
+          ℹ️ <strong>ملاحظة:</strong> الأداة بتستخدم خاصية الطباعة المدمجة في متصفحك (Print → حفظ كـ PDF)، فبتشتغل من غير أي مكتبة خارجية ومن غير اتصال إنترنت. ملفات <strong>.mhtml/.mht</strong> (اللي بتنزل من زرار التنزيل في Chrome) معالجتها بأسلوب مختلف شوية (تجربة/Best-effort)؛ لو الشكل طلع ناقص، الأسهل إنك تستخدم زرار "طباعة" في Chrome نفسه مباشرة من الصفحة قبل ما تنزّلها.
+        </div>
+        <div id="html2pdf-tools">
+          <div class="drop-zone">
+            <input type="file" accept=".html,.htm,.mhtml,.mht,text/html" id="html2pdf-input">
+            <h3 id="html2pdf-drop-text">ارفع ملف HTML للتحويل</h3>
+          </div>
+          <button class="btn" id="html2pdf-btn" style="margin-top: 15px;" disabled>🌐 تحويل إلى PDF</button>
+          <div class="progress-container" id="html2pdf-progress">
+            <div class="progress-bar"><div class="progress-fill" id="html2pdf-fill"></div></div>
+            <div class="progress-text" id="html2pdf-text">جاري المعالجة...</div>
+          </div>
+          <div class="results-area" id="html2pdf-results"></div>
         </div>
       </div>
     </div>
@@ -1389,6 +1411,112 @@ document.getElementById('video-btn').addEventListener('click', async function() 
     fileInput.disabled = false;
     fileInput.value = '';
     document.getElementById('video-drop-text').innerHTML = 'ارفع فيديو للضغط';
+  }
+});
+
+// ==========================================
+// 13. تحويل HTML إلى PDF (عبر خاصية الطباعة المدمجة في المتصفح - بدون أي مكتبة خارجية)
+// ==========================================
+document.getElementById('html2pdf-input').addEventListener('change', function(e) {
+  const files = e.target.files;
+  const textEl = document.getElementById('html2pdf-drop-text');
+  const btnEl = document.getElementById('html2pdf-btn');
+  if (files.length > 0) {
+    textEl.innerHTML = `✅ تم اختيار: <strong style="color: var(--primary);">${files[0].name}</strong>`;
+    btnEl.disabled = false;
+  } else {
+    textEl.innerHTML = 'ارفع ملف HTML للتحويل';
+    btnEl.disabled = true;
+  }
+});
+
+let html2pdfFrame = null;
+
+document.getElementById('html2pdf-btn').addEventListener('click', async function() {
+  const fileInput = document.getElementById('html2pdf-input');
+  const file = fileInput.files[0];
+  const btn = this;
+  const resultsArea = document.getElementById('html2pdf-results');
+  const progContainer = document.getElementById('html2pdf-progress');
+  const progFill = document.getElementById('html2pdf-fill');
+  const progText = document.getElementById('html2pdf-text');
+
+  if (!file) {
+    alert('يرجى اختيار ملف HTML أولاً.');
+    return;
+  }
+
+  resultsArea.innerHTML = '';
+  btn.disabled = true;
+  progContainer.classList.add('show');
+  progFill.style.width = '20%';
+  progText.innerText = '⏳ جاري قراءة الملف...';
+
+  try {
+    const ext = getFileNameInfo(file.name).ext;
+    const isArchive = (ext === '.mhtml' || ext === '.mht');
+
+    // نشيل أي إطار طباعة قديم من محاولة سابقة قبل إنشاء واحد جديد
+    if (html2pdfFrame && html2pdfFrame.parentNode) {
+      html2pdfFrame.parentNode.removeChild(html2pdfFrame);
+    }
+
+    progFill.style.width = '60%';
+    progText.innerText = '⏳ جاري تجهيز نافذة الطباعة...';
+
+    html2pdfFrame = document.createElement('iframe');
+    html2pdfFrame.style.position = 'fixed';
+    html2pdfFrame.style.top = '0';
+    html2pdfFrame.style.left = '0';
+    html2pdfFrame.style.width = '100%';
+    html2pdfFrame.style.height = '100%';
+    html2pdfFrame.style.border = '0';
+    html2pdfFrame.style.opacity = '0';
+    html2pdfFrame.style.pointerEvents = 'none';
+    html2pdfFrame.style.zIndex = '-1';
+    document.body.appendChild(html2pdfFrame);
+
+    if (isArchive) {
+      // ملفات mhtml/mht: نخليها تتفتح بصيغتها الأصلية عن طريق رابط Blob
+      // (محاولة Best-effort لأن بعض المتصفحات بترندرها وبعضها لأ)
+      progText.innerText = '⏳ جاري محاولة فتح أرشيف الصفحة المحفوظة...';
+      const blobUrl = URL.createObjectURL(file);
+      await new Promise((resolve, reject) => {
+        html2pdfFrame.onload = resolve;
+        html2pdfFrame.onerror = () => reject(new Error('تعذر فتح الأرشيف المحفوظ'));
+        html2pdfFrame.src = blobUrl;
+      });
+    } else {
+      // ملفات html/htm عادية: نقرأها كنص ونحطها مباشرة عشان دقة كاملة
+      const htmlText = await file.text();
+      await new Promise((resolve, reject) => {
+        html2pdfFrame.onload = resolve;
+        html2pdfFrame.onerror = () => reject(new Error('تعذر تحميل محتوى الملف داخل نافذة الطباعة'));
+        html2pdfFrame.srcdoc = htmlText;
+      });
+    }
+
+    progFill.style.width = '100%';
+    progText.innerText = '✅ جاهز! هتفتح نافذة طباعة دلوقتي.';
+
+    const frameWindow = html2pdfFrame.contentWindow;
+    frameWindow.focus();
+    frameWindow.print();
+
+    const infoMsg = document.createElement('div');
+    infoMsg.className = 'alert info';
+    if (isArchive) {
+      infoMsg.innerHTML = '📑 في نافذة الطباعة اللي فتحت، اختر <strong>"حفظ كـ PDF"</strong> كوجهة الطباعة. لو طلعت الصفحة فاضية أو ناقصة، استخدم زرار "طباعة" جوه Chrome نفسه مباشرة (قبل ما تنزّل الصفحة) — هيدّيك نتيجة أدق.';
+    } else {
+      infoMsg.innerHTML = '📑 في نافذة الطباعة اللي فتحت، اختر <strong>"حفظ كـ PDF"</strong> أو <strong>"Save as PDF"</strong> كوجهة الطباعة (بدل اسم الطابعة)، بعدين اضغط حفظ/مشاركة لاختيار مكان الحفظ في جهازك.';
+    }
+    resultsArea.appendChild(infoMsg);
+
+  } catch (err) {
+    console.error(err);
+    showError('html2pdf-results', 'فشل تجهيز الملف للطباعة. تأكد أن الملف بصيغة HTML أو MHTML صالحة.');
+  } finally {
+    btn.disabled = false;
   }
 });
 </script>
