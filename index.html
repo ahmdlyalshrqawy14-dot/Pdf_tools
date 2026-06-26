@@ -1,1416 +1,1799 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>أدوات الميديا والملفات الاحترافية | Pro Tools</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0f111a; --surface: #1e2130; --card: #262a3f;
-    --primary: #6c5ce7; --primary-hover: #5849c4;
-    --success: #00b894; --warning: #fdcb6e; --danger: #ff7675;
-    --text: #f5f6fa; --muted: #a4b0be; --border: #353b50;
-  }
-  
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
-  body { background: var(--bg); color: var(--text); line-height: 1.6; padding-bottom: 50px; }
-  
-  /* --- التوجيه (النافار) --- */
-  .navbar { background: var(--surface); padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-  .nav-btn { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.3s; }
-  .nav-btn.active { background: var(--primary); border-color: var(--primary); }
-  .nav-btn:hover:not(.active) { background: var(--card); }
-
-  /* --- الحاويات --- */
-  .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
-  .panel { display: none; animation: fadeIn 0.4s ease; }
-  .panel.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-  /* --- البطاقات والعناصر --- */
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-  h2 { color: var(--primary); margin-bottom: 10px; font-weight: 900; }
-  h3.tool-title { color: var(--text); margin-bottom: 8px; font-weight: 700; font-size: 1.05rem; }
-  .desc { color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; }
-  
-  /* --- مستويات الضغط --- */
-  .compression-levels { margin-bottom: 20px; }
-  .radio-group { display: flex; gap: 15px; flex-wrap: wrap; }
-  .radio-label { cursor: pointer; position: relative; }
-  .radio-label input { position: absolute; opacity: 0; cursor: pointer; }
-  .radio-custom { background: var(--bg); border: 1px solid var(--border); padding: 8px 15px; border-radius: 6px; font-size: 0.9rem; transition: 0.3s; display: inline-block; color: var(--muted); }
-  .radio-label input:checked ~ .radio-custom { background: rgba(108, 92, 231, 0.1); border-color: var(--primary); color: var(--text); }
-  
-  .drop-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; background: rgba(108, 92, 231, 0.03); transition: 0.3s; position: relative; }
-  .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  .drop-zone:hover { border-color: var(--primary); background: rgba(108, 92, 231, 0.08); }
-  .drop-zone.disabled { opacity: 0.5; pointer-events: none; border-color: var(--danger); background: rgba(255, 118, 117, 0.05); }
-  
-  .btn { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.3s; width: 100%; display: flex; justify-content: center; align-items: center; gap: 10px; }
-  .btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
-  .btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
-  
-  /* --- التنبيهات وإدارة الموارد --- */
-  .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; display: flex; gap: 10px; align-items: flex-start; }
-  .alert.warning { background: rgba(253, 203, 110, 0.1); border: 1px solid var(--warning); color: #ffeaa7; }
-  .alert.info { background: rgba(108, 92, 231, 0.1); border: 1px solid var(--primary); color: #a29bfe; }
-  .alert.danger { background: rgba(255, 118, 117, 0.1); border: 1px solid var(--danger); color: #ff9ff3; }
-
-  /* --- مدير المكتبات --- */
-  .lib-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
-  .lib-card { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 10px; }
-  .lib-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .lib-size { font-size: 0.8rem; background: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 20px; font-family: monospace; }
-  .lib-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--danger); margin-right: 5px; }
-  .lib-status.active { background: var(--success); }
-  .lib-actions { display: flex; gap: 10px; margin-top: 15px; }
-  .lib-btn { flex: 1; padding: 8px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
-  .btn-online { background: rgba(108, 92, 231, 0.2); color: #a29bfe; border: 1px solid var(--primary); }
-  .btn-local { background: rgba(255, 255, 255, 0.05); color: var(--text); border: 1px solid var(--border); position: relative; }
-  .btn-local input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-
-  /* --- مؤشر التحميل --- */
-  .progress-container { display: none; margin-top: 20px; }
-  .progress-container.show { display: block; }
-  .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 5px; }
-  .progress-fill { height: 100%; width: 0%; background: var(--success); transition: 0.3s; }
-  .progress-text { font-size: 0.85rem; color: var(--muted); text-align: center; }
-
-  /* --- قسم النتائج --- */
-  .results-area { margin-top: 25px; display: flex; flex-direction: column; gap: 15px; }
-  .result-item { background: var(--bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-  .result-info { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px; }
-  .result-stats { font-size: 0.8rem; color: var(--muted); display: flex; gap: 10px; }
-  .size-badge { background: var(--surface); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); }
-  
-  .input-group { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-  .input-group input { flex: 1; background: transparent; border: none; color: var(--text); padding: 10px; font-family: 'Cairo', sans-serif; outline: none; }
-  .input-group input:focus { background: rgba(108, 92, 231, 0.05); }
-  .input-group .ext { padding: 10px; background: var(--card); color: var(--muted); border-right: 1px solid var(--border); font-family: monospace; direction: ltr;}
-  
-  .download-btn { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 8px; font-family: 'Cairo', sans-serif; }
-  .download-btn:hover { background: #00a082; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0, 184, 148, 0.2); }
-
-  /* --- أدوات PDF الفرعية --- */
-  .sub-nav { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-  .sub-nav-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); padding: 9px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: 0.25s; }
-  .sub-nav-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
-  .sub-nav-btn:hover:not(.active) { color: var(--text); border-color: var(--primary); }
-  .sub-panel { display: none; }
-  .sub-panel.active { display: block; }
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أدوات الميديا والملفات الاحترافية | Pro Media Tools</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #07080e;
+            --bg: #0c0e16;
+            --surface: #131620;
+            --surface-hover: #181c28;
+            --card: #191d2b;
+            --card-border: #222738;
+            --primary: #7b5dfa;
+            --primary-glow: rgba(123, 93, 250, 0.28);
+            --primary-hover: #9578ff;
+            --primary-soft: rgba(123, 93, 250, 0.12);
+            --success: #0dcc82;
+            --success-soft: rgba(13, 204, 130, 0.12);
+            --warning: #f6b84d;
+            --warning-soft: rgba(246, 184, 77, 0.12);
+            --danger: #f76c6c;
+            --danger-soft: rgba(247, 108, 108, 0.12);
+            --text: #e9edf5;
+            --text-secondary: #bcc5d8;
+            --muted: #8991a6;
+            --border: #23283a;
+            --border-light: #2d3348;
+            --radius-sm: 8px;
+            --radius: 14px;
+            --radius-lg: 18px;
+            --radius-xl: 24px;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+            --shadow: 0 4px 18px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.25);
+            --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 0 28px var(--primary-glow);
+            --transition-fast: 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg-deep);
+            color: var(--text);
+            font-family: 'Cairo', sans-serif;
+            line-height: 1.7;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            background-image: radial-gradient(ellipse at 20% 8%, rgba(123, 93, 250, 0.045) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 90%, rgba(13, 204, 130, 0.035) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 50%, rgba(123, 93, 250, 0.02) 0%, transparent 70%);
+            background-attachment: fixed;
+            padding-bottom: 60px;
+        }
+        .navbar {
+            background: rgba(12, 14, 22, 0.78);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+            padding: 10px 18px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            justify-content: center;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: 0 1px 22px rgba(0, 0, 0, 0.55);
+            scrollbar-width: none;
+        }
+        .navbar::-webkit-scrollbar { display: none; }
+        .nav-btn {
+            background: transparent;
+            border: 1.5px solid transparent;
+            color: var(--muted);
+            padding: 9px 17px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.88rem;
+            white-space: nowrap;
+            transition: var(--transition);
+            flex-shrink: 0;
+            letter-spacing: 0.01em;
+        }
+        .nav-btn:hover { color: var(--text); background: rgba(255,255,255,0.028); border-color: rgba(255,255,255,0.07); }
+        .nav-btn.active { background: var(--primary-soft); border-color: var(--primary); color: #fff; box-shadow: var(--shadow-glow); font-weight: 700; }
+        .container { max-width: 960px; margin: 0 auto; padding: 30px 16px 50px; }
+        .panel { display: none; animation: panelEnter 0.38s cubic-bezier(0.22, 0.61, 0.36, 1); }
+        .panel.active { display: block; }
+        @keyframes panelEnter {
+            from { opacity: 0; transform: translateY(15px); filter: blur(2px); }
+            to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 26px 24px;
+            margin-bottom: 22px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.035), transparent);
+            pointer-events: none;
+        }
+        .card:hover { border-color: var(--border-light); box-shadow: var(--shadow-lg); }
+        .card h2 { color: #fff; margin-bottom: 5px; font-weight: 800; font-size: 1.32rem; letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .icon-circle { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--primary-soft); font-size: 1.05rem; flex-shrink: 0; }
+        .desc { color: var(--muted); font-size: 0.88rem; margin-bottom: 18px; line-height: 1.7; }
+        .alert { padding: 13px 15px; border-radius: var(--radius); margin-bottom: 16px; font-size: 0.83rem; display: flex; gap: 9px; align-items: flex-start; line-height: 1.6; backdrop-filter: blur(3px); }
+        .alert.warning { background: var(--warning-soft); border: 1px solid rgba(246,184,77,0.3); color: #fcd589; }
+        .alert.info    { background: var(--primary-soft); border: 1px solid rgba(123,93,250,0.3); color: #b8a9ff; }
+        .alert.danger  { background: var(--danger-soft);  border: 1px solid rgba(247,108,108,0.3); color: #fca5a5; }
+        .section-label { color: var(--muted); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 7px; }
+        .section-row { margin-bottom: 16px; }
+        .radio-group { display: flex; gap: 9px; flex-wrap: wrap; }
+        .radio-label { cursor: pointer; position: relative; }
+        .radio-label input { position: absolute; opacity: 0; cursor: pointer; width: 0; height: 0; }
+        .radio-custom { background: rgba(255,255,255,0.025); border: 1.5px solid var(--border); padding: 8px 15px; border-radius: 50px; font-size: 0.83rem; font-weight: 500; transition: var(--transition); display: inline-block; color: var(--muted); user-select: none; white-space: nowrap; }
+        .radio-label input:checked ~ .radio-custom { background: var(--primary-soft); border-color: var(--primary); color: #fff; box-shadow: 0 0 12px rgba(123,93,250,0.2); font-weight: 600; }
+        .radio-label:hover .radio-custom { border-color: var(--border-light); background: rgba(255,255,255,0.04); }
+        .drop-zone { border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 34px 18px; text-align: center; cursor: pointer; background: rgba(123,93,250,0.018); transition: var(--transition); position: relative; overflow: hidden; }
+        .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2; }
+        .drop-zone h3 { font-weight: 600; color: var(--muted); font-size: 0.93rem; pointer-events: none; transition: var(--transition); position: relative; z-index: 1; }
+        .drop-zone:hover { border-color: var(--primary); background: rgba(123,93,250,0.055); box-shadow: 0 0 18px rgba(123,93,250,0.07); }
+        .drop-zone:hover h3 { color: #c4b5ff; }
+        .drop-zone.disabled { opacity: 0.4; pointer-events: none; border-color: var(--danger); background: rgba(247,108,108,0.025); filter: grayscale(0.3); }
+        .btn { background: linear-gradient(135deg, #7b5dfa 0%, #6a4de8 100%); color: #fff; border: none; padding: 12px 24px; border-radius: 50px; font-size: 0.93rem; font-weight: 700; cursor: pointer; transition: var(--transition); width: 100%; display: flex; justify-content: center; align-items: center; gap: 7px; letter-spacing: 0.01em; font-family: 'Cairo', sans-serif; box-shadow: 0 4px 15px rgba(123,93,250,0.3); position: relative; overflow: hidden; }
+        .btn:hover { background: linear-gradient(135deg, #9578ff 0%, #7b5dfa 100%); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(123,93,250,0.4); }
+        .btn:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(123,93,250,0.25); transition: 0.07s; }
+        .btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-cancel { background: transparent; border: 1.5px solid var(--danger); color: var(--danger); padding: 9px 18px; border-radius: 50px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: var(--transition); font-family: 'Cairo', sans-serif; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; white-space: nowrap; }
+        .btn-cancel:hover { background: var(--danger-soft); border-color: #f76c6c; box-shadow: 0 0 14px rgba(247,108,108,0.22); }
+        .progress-container { display: none; margin-top: 16px; animation: fadeSlideIn 0.3s ease; }
+        .progress-container.show { display: block; }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .progress-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 7px; }
+        .progress-bar { height: 6px; background: var(--border); border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #7b5dfa, #0dcc82); border-radius: 10px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
+        .progress-text { font-size: 0.8rem; color: var(--muted); font-weight: 500; margin: 0; }
+        .results-area { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .result-item { background: rgba(255,255,255,0.018); border: 1px solid var(--border); padding: 15px 16px; border-radius: var(--radius); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; transition: var(--transition); animation: fadeSlideIn 0.32s ease; }
+        .result-item:hover { border-color: var(--border-light); background: rgba(255,255,255,0.035); }
+        .result-info { flex: 1; min-width: 190px; display: flex; flex-direction: column; gap: 7px; }
+        .result-stats { font-size: 0.76rem; color: var(--muted); display: flex; gap: 7px; flex-wrap: wrap; }
+        .size-badge { background: rgba(255,255,255,0.035); padding: 3px 9px; border-radius: 18px; border: 1px solid var(--border); font-size: 0.73rem; white-space: nowrap; }
+        .size-badge.saved { color: var(--success); border-color: rgba(13,204,130,0.4); background: var(--success-soft); }
+        .size-badge.bigger { color: var(--warning); border-color: rgba(246,184,77,0.4); background: var(--warning-soft); }
+        .input-group { display: flex; align-items: center; background: rgba(255,255,255,0.025); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; transition: var(--transition); }
+        .input-group:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(123,93,250,0.08); }
+        .input-group input { flex: 1; background: transparent; border: none; color: var(--text); padding: 9px 11px; font-family: 'Cairo', sans-serif; outline: none; font-size: 0.88rem; min-width: 0; }
+        .input-group .ext { padding: 9px 13px; background: rgba(255,255,255,0.025); color: var(--muted); border-right: 1px solid var(--border); font-family: 'Cairo', monospace; direction: ltr; font-weight: 600; font-size: 0.82rem; flex-shrink: 0; }
+        .download-btn { background: var(--success); color: #fff; border: none; padding: 9px 18px; border-radius: 50px; cursor: pointer; font-weight: 700; transition: var(--transition); display: flex; align-items: center; gap: 6px; font-family: 'Cairo', sans-serif; font-size: 0.83rem; white-space: nowrap; box-shadow: 0 4px 10px rgba(13,204,130,0.22); }
+        .download-btn:hover { background: #0dd98c; transform: translateY(-2px); box-shadow: 0 7px 18px rgba(13,204,130,0.32); }
+        .sub-nav { display: flex; gap: 7px; margin-bottom: 18px; flex-wrap: wrap; }
+        .sub-nav-btn { background: rgba(255,255,255,0.02); border: 1.5px solid var(--border); color: var(--muted); padding: 8px 15px; border-radius: 50px; cursor: pointer; font-weight: 600; font-size: 0.83rem; transition: var(--transition); white-space: nowrap; font-family: 'Cairo', sans-serif; }
+        .sub-nav-btn.active { background: var(--primary-soft); border-color: var(--primary); color: #fff; box-shadow: 0 0 12px rgba(123,93,250,0.2); }
+        .sub-panel { display: none; }
+        .sub-panel.active { display: block; animation: panelEnter 0.28s ease; }
+        .worker-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.71rem; padding: 3px 9px; border-radius: 18px; background: var(--success-soft); border: 1px solid rgba(13,204,130,0.4); color: var(--success); font-weight: 600; white-space: nowrap; animation: badgePulse 2.4s ease-in-out infinite; }
+        @keyframes badgePulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(13,204,130,0.3); }
+            50%      { box-shadow: 0 0 0 7px rgba(13,204,130,0); }
+        }
+        .lib-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 14px; }
+        .lib-card { background: var(--card); border: 1px solid var(--card-border); padding: 18px; border-radius: var(--radius); transition: var(--transition); }
+        .lib-card:hover { border-color: var(--border-light); box-shadow: var(--shadow-lg); }
+        .lib-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px; }
+        .lib-header h3 { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 0.92rem; }
+        .lib-status { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #555; transition: var(--transition); flex-shrink: 0; }
+        .lib-status.active { background: var(--success); box-shadow: 0 0 10px rgba(13,204,130,0.6); animation: statusGlow 2s ease-in-out infinite; }
+        @keyframes statusGlow {
+            0%,100% { box-shadow: 0 0 5px rgba(13,204,130,0.5); }
+            50%      { box-shadow: 0 0 15px rgba(13,204,130,0.9); }
+        }
+        .lib-size { font-size: 0.72rem; background: rgba(255,255,255,0.04); padding: 2px 9px; border-radius: 16px; color: var(--muted); white-space: nowrap; }
+        .lib-actions { display: flex; gap: 7px; margin-top: 12px; flex-wrap: wrap; }
+        .lib-btn { flex: 1; min-width: 110px; padding: 8px 11px; border: none; border-radius: 50px; cursor: pointer; font-weight: 600; font-size: 0.78rem; transition: var(--transition); font-family: 'Cairo', sans-serif; text-align: center; position: relative; }
+        .btn-online { background: var(--primary-soft); color: #b8a9ff; border: 1px solid rgba(123,93,250,0.3); }
+        .btn-online:hover { background: rgba(123,93,250,0.18); border-color: var(--primary); }
+        .btn-local { background: rgba(255,255,255,0.025); color: var(--text-secondary); border: 1px solid var(--border); overflow: hidden; }
+        .btn-local input { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2; }
+        .btn-local:hover { border-color: var(--border-light); background: rgba(255,255,255,0.05); }
+        .toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 7px; pointer-events: none; width: 92%; max-width: 480px; }
+        .toast { background: var(--card); border: 1px solid var(--border-light); padding: 13px 17px; border-radius: var(--radius); color: var(--text); font-weight: 500; font-size: 0.83rem; box-shadow: var(--shadow-lg); animation: toastIn 0.32s ease, toastOut 0.28s ease 2.8s forwards; pointer-events: auto; text-align: center; backdrop-filter: blur(6px); }
+        @keyframes toastIn  { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; transform: translateY(0); }    to { opacity: 0; transform: translateY(-14px); } }
+        .speed-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; padding: 2px 8px; border-radius: 14px; background: var(--success-soft); color: var(--success); border: 1px solid rgba(13,204,130,0.3); margin-right: 6px; font-weight: 600; }
+        @media (max-width: 768px) {
+            .container { padding: 18px 8px 38px; }
+            .card { padding: 18px 12px; border-radius: var(--radius); }
+            .card h2 { font-size: 1.1rem; }
+            .navbar { padding: 7px 8px; gap: 3px; justify-content: flex-start; }
+            .nav-btn { padding: 7px 12px; font-size: 0.75rem; }
+            .radio-custom { padding: 6px 10px; font-size: 0.75rem; }
+            .drop-zone { padding: 22px 12px; border-radius: var(--radius); }
+            .drop-zone h3 { font-size: 0.8rem; }
+            .btn { padding: 10px 18px; font-size: 0.85rem; }
+            .result-item { flex-direction: column; align-items: stretch; }
+            .lib-grid { grid-template-columns: 1fr; }
+            .lib-actions { flex-direction: column; }
+            .sub-nav-btn { padding: 6px 10px; font-size: 0.75rem; }
+            .progress-header { flex-direction: column; align-items: stretch; text-align: center; }
+        }
+    </style>
 </head>
 <body>
 
-  <nav class="navbar">
-    <button class="nav-btn active" onclick="switchTab('images', event)">🖼️ الصور</button>
-    <button class="nav-btn" onclick="switchTab('pdf', event)">📄 ملفات PDF</button>
-    <button class="nav-btn" onclick="switchTab('audio', event)">🎵 الصوت</button>
-    <button class="nav-btn" onclick="switchTab('video', event)">🎬 الفيديو</button>
-    <button class="nav-btn" onclick="switchTab('libraries', event)" style="border-color: var(--primary);">⚙️ المكتبات (هام)</button>
-  </nav>
+<div class="toast-container" id="toast-container"></div>
 
-  <div class="container">
-    
+<nav class="navbar">
+    <button class="nav-btn active" onclick="switchTab('images', this)">🖼️ الصور</button>
+    <button class="nav-btn" onclick="switchTab('pdf', this)">📄 PDF</button>
+    <button class="nav-btn" onclick="switchTab('audio', this)">🎵 الصوت</button>
+    <button class="nav-btn" onclick="switchTab('video', this)">🎬 الفيديو</button>
+    <button class="nav-btn" onclick="switchTab('libraries', this)">⚙️ المكتبات</button>
+</nav>
+
+<div class="container">
+
+    <!-- ===== الصور ===== -->
     <div id="panel-images" class="panel active">
-      <div class="card">
-        <h2>ضغط وتحويل الصور</h2>
-        <p class="desc">ضغط محلي سريع باستخدام HTML5 Canvas. لا يستهلك إنترنت. (يدعم JPG, PNG, WebP)</p>
-        
-        <div class="alert info">
-          ⚡ <strong>أداء محسّن:</strong> الكود يقوم بمعالجة الصور بالتتابع (Sequential) وينظف الذاكرة العشوائية فوراً لمنع توقف المتصفح.
+        <div class="card">
+            <h2><span class="icon-circle">🖼️</span> ضغط وتحويل الصور</h2>
+            <p class="desc">معالجة محلية سريعة باستخدام HTML5 Canvas. يدعم JPG و PNG و WebP مع الحفاظ على الشفافية.</p>
+            <div class="alert info">⚡ <strong>أداء محسّن:</strong> معالجة متتابعة مع تنظيف تلقائي للذاكرة. يمكنك إلغاء العملية في أي لحظة.</div>
+            <div class="section-row">
+                <p class="section-label">📐 تنسيق الإخراج</p>
+                <div class="radio-group" id="img-format-group">
+                    <label class="radio-label"><input type="radio" name="img-format" value="jpeg" checked><span class="radio-custom">JPG — أصغر حجم</span></label>
+                    <label class="radio-label"><input type="radio" name="img-format" value="webp"><span class="radio-custom">WebP — جودة + شفافية</span></label>
+                    <label class="radio-label"><input type="radio" name="img-format" value="png"><span class="radio-custom">PNG — بدون فقدان</span></label>
+                </div>
+            </div>
+            <div class="section-row">
+                <p class="section-label">🎚️ مستوى الضغط</p>
+                <div class="radio-group" id="img-comp-group">
+                    <label class="radio-label"><input type="radio" name="comp-level" value="light"><span class="radio-custom">🟢 خفيف</span></label>
+                    <label class="radio-label"><input type="radio" name="comp-level" value="medium" checked><span class="radio-custom">🟡 متوسط</span></label>
+                    <label class="radio-label"><input type="radio" name="comp-level" value="heavy"><span class="radio-custom">🔴 شديد</span></label>
+                </div>
+            </div>
+            <div class="drop-zone" id="img-drop">
+                <input type="file" accept="image/*" multiple id="img-input">
+                <h3>📁 اسحب الصور هنا أو انقر للاختيار</h3>
+            </div>
+            <div class="progress-container" id="img-progress">
+                <div class="progress-header">
+                    <span class="progress-text" id="img-text">⏳ جاري المعالجة...</span>
+                    <button class="btn-cancel" id="img-cancel-btn" style="display:none;">✕ إلغاء العملية</button>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" id="img-fill"></div></div>
+            </div>
+            <div class="results-area" id="img-results"></div>
         </div>
-
-        <div class="compression-levels">
-          <h4 style="margin-bottom: 10px; color: var(--muted);">اختر مستوى الضغط:</h4>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input type="radio" name="comp-level" value="light">
-              <span class="radio-custom">🟢 خفيف (جودة عالية)</span>
-            </label>
-            <label class="radio-label">
-              <input type="radio" name="comp-level" value="medium" checked>
-              <span class="radio-custom">🟡 متوسط (متوازن)</span>
-            </label>
-            <label class="radio-label">
-              <input type="radio" name="comp-level" value="heavy">
-              <span class="radio-custom">🔴 شديد (أصغر حجم)</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="drop-zone" id="img-drop">
-          <input type="file" accept="image/*" multiple id="img-input">
-          <h3>اسحب الصور هنا أو انقر للاختيار</h3>
-        </div>
-
-        <div class="progress-container" id="img-progress">
-          <div class="progress-bar"><div class="progress-fill" id="img-fill"></div></div>
-          <div class="progress-text" id="img-text">جاري المعالجة... 0%</div>
-        </div>
-
-        <div class="results-area" id="img-results"></div>
-      </div>
     </div>
 
+    <!-- ===== PDF ===== -->
     <div id="panel-pdf" class="panel">
-      <div class="card">
-        <h2>أدوات PDF</h2>
-        <p class="desc">دمج، تقسيم، ضغط، وتحويل الصور إلى PDF — كل المعالجة تتم محلياً داخل المتصفح بدون رفع أي ملف لأي خادم.</p>
-        <div class="alert warning" id="pdf-lib-warning">
-          ⚠️ <strong>تنبيه:</strong> يرجى تفعيل مكتبة "pdf-lib" من قسم الإعدادات لتشغيل هذه الأدوات.
+        <div class="card">
+            <h2><span class="icon-circle">📄</span> أدوات PDF</h2>
+            <p class="desc">دمج، تقسيم، ضغط، وتحويل الصور إلى PDF — كل المعالجة محلية داخل المتصفح.</p>
+            <div class="alert warning" id="pdf-lib-warning">⚠️ <strong>تنبيه:</strong> يرجى تفعيل مكتبة "pdf-lib" من قسم المكتبات.</div>
+            <div id="pdf-tools" style="opacity:0.45;pointer-events:none;">
+                <div class="sub-nav">
+                    <button class="sub-nav-btn active" onclick="switchPdfTool('merge', this)">🔗 دمج</button>
+                    <button class="sub-nav-btn" onclick="switchPdfTool('split', this)">✂️ تقسيم</button>
+                    <button class="sub-nav-btn" onclick="switchPdfTool('compress', this)">🗜️ ضغط</button>
+                    <button class="sub-nav-btn" onclick="switchPdfTool('img2pdf', this)">🖼️ صور←PDF</button>
+                </div>
+                <div id="pdf-sub-merge" class="sub-panel active">
+                    <h3 style="font-weight:700;margin-bottom:4px;">دمج ملفات PDF وصور</h3>
+                    <p class="desc">ارفع ملفين أو أكثر (PDF أو صور) للدمج بنفس ترتيب الرفع.</p>
+                    <div class="drop-zone"><input type="file" accept=".pdf,application/pdf,image/*" multiple id="pdf-input"><h3 id="pdf-drop-text">ارفع ملفين أو أكثر</h3></div>
+                    <button class="btn" id="pdf-btn" style="margin-top:14px;" disabled>📎 دمج الملفات</button>
+                    <div class="progress-container" id="pdf-progress"><div class="progress-header"><span class="progress-text" id="pdf-text"></span><button class="btn-cancel" id="pdf-cancel-btn" style="display:none;">✕ إلغاء</button></div><div class="progress-bar"><div class="progress-fill" id="pdf-fill"></div></div></div>
+                    <div class="results-area" id="pdf-results"></div>
+                </div>
+                <div id="pdf-sub-split" class="sub-panel">
+                    <h3 style="font-weight:700;margin-bottom:4px;">تقسيم ملف PDF</h3>
+                    <p class="desc">كل صفحة في ملف منفصل، أو حدد نطاقات مخصصة.</p>
+                    <div class="section-row"><p class="section-label">طريقة التقسيم</p><div class="radio-group"><label class="radio-label"><input type="radio" name="split-mode" value="all" checked><span class="radio-custom">📄 كل صفحة منفصلة</span></label><label class="radio-label"><input type="radio" name="split-mode" value="custom"><span class="radio-custom">🎯 نطاقات مخصصة</span></label></div></div>
+                    <div id="split-custom-wrap" style="display:none;margin-bottom:14px;"><div class="input-group" style="margin-bottom:5px;"><input type="text" id="split-ranges" placeholder="مثال: 1-3, 5, 7-9"></div><p class="desc" style="margin-bottom:0;">كل مجموعة مفصولة بفاصلة في ملف PDF مستقل. الترقيم يبدأ من 1.</p></div>
+                    <div class="drop-zone"><input type="file" accept=".pdf" id="split-input"><h3 id="split-drop-text">ارفع ملف PDF واحد</h3></div>
+                    <button class="btn" id="split-btn" style="margin-top:14px;" disabled>✂️ تقسيم الملف</button>
+                    <div class="progress-container" id="split-progress"><div class="progress-header"><span class="progress-text" id="split-text"></span><button class="btn-cancel" id="split-cancel-btn" style="display:none;">✕ إلغاء</button></div><div class="progress-bar"><div class="progress-fill" id="split-fill"></div></div></div>
+                    <div class="results-area" id="split-results"></div>
+                </div>
+                <div id="pdf-sub-compress" class="sub-panel">
+                    <h3 style="font-weight:700;margin-bottom:4px;">ضغط حجم ملف PDF</h3>
+                    <p class="desc">إعادة ترميز صور JPEG المضمنة + تنظيف الكائنات اليتيمة تلقائياً.</p>
+                    <div class="alert info">✨ <strong>ملاحظة:</strong> نسخ الملف لمستند نظيف بعد الضغط لإزالة الكائنات غير المستخدمة.</div>
+                    <div class="section-row"><p class="section-label">مستوى الضغط</p><div class="radio-group"><label class="radio-label"><input type="radio" name="pdf-comp-level" value="light"><span class="radio-custom">🟢 خفيف</span></label><label class="radio-label"><input type="radio" name="pdf-comp-level" value="medium" checked><span class="radio-custom">🟡 متوسط</span></label><label class="radio-label"><input type="radio" name="pdf-comp-level" value="heavy"><span class="radio-custom">🔴 شديد</span></label></div></div>
+                    <div class="drop-zone"><input type="file" accept=".pdf" id="compress-input"><h3 id="compress-drop-text">ارفع ملف PDF للضغط</h3></div>
+                    <button class="btn" id="compress-btn" style="margin-top:14px;" disabled>🗜️ ضغط الملف</button>
+                    <div class="progress-container" id="compress-progress"><div class="progress-header"><span class="progress-text" id="compress-text"></span><button class="btn-cancel" id="compress-cancel-btn" style="display:none;">✕ إلغاء</button></div><div class="progress-bar"><div class="progress-fill" id="compress-fill"></div></div></div>
+                    <div class="results-area" id="compress-results"></div>
+                </div>
+                <div id="pdf-sub-img2pdf" class="sub-panel">
+                    <h3 style="font-weight:700;margin-bottom:4px;">تحويل الصور إلى PDF</h3>
+                    <p class="desc">ارفع صورة أو أكثر — كل صورة في صفحة منفصلة.</p>
+                    <div class="drop-zone"><input type="file" accept="image/*" multiple id="img2pdf-input"><h3 id="img2pdf-drop-text">ارفع صورة أو أكثر</h3></div>
+                    <button class="btn" id="img2pdf-btn" style="margin-top:14px;" disabled>🖼️ تحويل إلى PDF</button>
+                    <div class="progress-container" id="img2pdf-progress"><div class="progress-header"><span class="progress-text" id="img2pdf-text"></span><button class="btn-cancel" id="img2pdf-cancel-btn" style="display:none;">✕ إلغاء</button></div><div class="progress-bar"><div class="progress-fill" id="img2pdf-fill"></div></div></div>
+                    <div class="results-area" id="img2pdf-results"></div>
+                </div>
+            </div>
         </div>
-
-        <div id="pdf-tools" style="opacity: 0.5; pointer-events: none;">
-
-          <div class="sub-nav">
-            <button class="sub-nav-btn active" onclick="switchPdfTool('merge', event)">🔗 دمج الملفات</button>
-            <button class="sub-nav-btn" onclick="switchPdfTool('split', event)">✂️ تقسيم الملف</button>
-            <button class="sub-nav-btn" onclick="switchPdfTool('compress', event)">🗜️ ضغط الحجم</button>
-            <button class="sub-nav-btn" onclick="switchPdfTool('img2pdf', event)">🖼️ صور ← PDF</button>
-          </div>
-
-          <!-- أداة الدمج -->
-          <div id="pdf-sub-merge" class="sub-panel active">
-            <h3 class="tool-title">دمج ملفات PDF وصور في ملف واحد</h3>
-            <p class="desc">ارفع ملفين أو أكثر — يمكنك خلط ملفات PDF مع صور (JPG, PNG, WebP...) معاً — وسيتم دمجهم بنفس ترتيب الرفع في ملف PDF واحد. كل صورة تتحول تلقائياً إلى صفحة PDF مستقلة.</p>
-            <div class="drop-zone">
-              <input type="file" accept=".pdf,application/pdf,image/*" multiple id="pdf-input">
-              <h3 id="pdf-drop-text">ارفع ملفات PDF و/أو صور (٢ أو أكثر للدمج)</h3>
-            </div>
-            <button class="btn" id="pdf-btn" style="margin-top: 15px;" disabled>📎 دمج الملفات</button>
-            <div class="progress-container" id="pdf-progress">
-              <div class="progress-bar"><div class="progress-fill" id="pdf-fill"></div></div>
-              <div class="progress-text" id="pdf-text">جاري المعالجة...</div>
-            </div>
-            <div class="results-area" id="pdf-results"></div>
-          </div>
-
-          <!-- أداة التقسيم -->
-          <div id="pdf-sub-split" class="sub-panel">
-            <h3 class="tool-title">تقسيم ملف PDF</h3>
-            <p class="desc">اختر طريقة التقسيم: كل صفحة في ملف منفصل، أو حدد النطاقات بنفسك.</p>
-
-            <div class="compression-levels">
-              <h4 style="margin-bottom: 10px; color: var(--muted);">طريقة التقسيم:</h4>
-              <div class="radio-group">
-                <label class="radio-label">
-                  <input type="radio" name="split-mode" value="all" checked>
-                  <span class="radio-custom">📄 كل صفحة في ملف منفصل</span>
-                </label>
-                <label class="radio-label">
-                  <input type="radio" name="split-mode" value="custom">
-                  <span class="radio-custom">🎯 تحديد نطاقات صفحات مخصصة</span>
-                </label>
-              </div>
-            </div>
-
-            <div id="split-custom-wrap" style="display:none; margin-bottom:20px;">
-              <div class="input-group" style="margin-bottom:8px;">
-                <input type="text" id="split-ranges" placeholder="مثال: 1-3, 5, 7-9" style="text-align:right;">
-              </div>
-              <p class="desc" style="margin-bottom:0;">كل مجموعة مفصولة بفاصلة هتنزل في ملف PDF مستقل (مثال: 1-3 هيبقى ملف واحد، 5 ملف تاني، 7-9 ملف تالت). ترقيم الصفحات يبدأ من 1.</p>
-            </div>
-
-            <div class="drop-zone">
-              <input type="file" accept=".pdf" id="split-input">
-              <h3 id="split-drop-text">ارفع ملف PDF واحد للتقسيم</h3>
-            </div>
-            <button class="btn" id="split-btn" style="margin-top: 15px;" disabled>✂️ تقسيم الملف</button>
-            <div class="progress-container" id="split-progress">
-              <div class="progress-bar"><div class="progress-fill" id="split-fill"></div></div>
-              <div class="progress-text" id="split-text">جاري المعالجة...</div>
-            </div>
-            <div class="results-area" id="split-results"></div>
-          </div>
-
-          <!-- أداة الضغط -->
-          <div id="pdf-sub-compress" class="sub-panel">
-            <h3 class="tool-title">ضغط حجم ملف PDF</h3>
-            <p class="desc">يعمل الضغط على إعادة ترميز الصور المضمنة داخل الملف (JPEG) بجودة وأبعاد أقل. الملفات النصية بدون صور كبيرة لن تنخفض كثيراً لأن حجمها أصلاً صغير.</p>
-            <div class="alert info">
-              ℹ️ هذه الأداة تستهدف الصور بصيغة JPEG المضمنة داخل الـ PDF (وهي الحالة الأشيع في الملفات الممسوحة ضوئياً والكتالوجات). صور بصيغ أخرى مضمنة بترميز خام قد لا تنخفض في الحجم.
-            </div>
-            <div class="compression-levels">
-              <h4 style="margin-bottom: 10px; color: var(--muted);">اختر مستوى الضغط:</h4>
-              <div class="radio-group">
-                <label class="radio-label">
-                  <input type="radio" name="pdf-comp-level" value="light">
-                  <span class="radio-custom">🟢 خفيف (جودة عالية)</span>
-                </label>
-                <label class="radio-label">
-                  <input type="radio" name="pdf-comp-level" value="medium" checked>
-                  <span class="radio-custom">🟡 متوسط (متوازن)</span>
-                </label>
-                <label class="radio-label">
-                  <input type="radio" name="pdf-comp-level" value="heavy">
-                  <span class="radio-custom">🔴 شديد (أصغر حجم)</span>
-                </label>
-              </div>
-            </div>
-            <div class="drop-zone">
-              <input type="file" accept=".pdf" id="compress-input">
-              <h3 id="compress-drop-text">ارفع ملف PDF للضغط</h3>
-            </div>
-            <button class="btn" id="compress-btn" style="margin-top: 15px;" disabled>🗜️ ضغط الملف</button>
-            <div class="progress-container" id="compress-progress">
-              <div class="progress-bar"><div class="progress-fill" id="compress-fill"></div></div>
-              <div class="progress-text" id="compress-text">جاري المعالجة...</div>
-            </div>
-            <div class="results-area" id="compress-results"></div>
-          </div>
-
-          <!-- أداة تحويل الصور إلى PDF -->
-          <div id="pdf-sub-img2pdf" class="sub-panel">
-            <h3 class="tool-title">تحويل الصور إلى ملف PDF</h3>
-            <p class="desc">ارفع صورة أو أكثر (JPG, PNG, WebP...) وسيتم وضع كل صورة في صفحة PDF منفصلة بنفس ترتيب الاختيار، في ملف واحد.</p>
-            <div class="drop-zone">
-              <input type="file" accept="image/*" multiple id="img2pdf-input">
-              <h3 id="img2pdf-drop-text">ارفع صورة أو أكثر</h3>
-            </div>
-            <button class="btn" id="img2pdf-btn" style="margin-top: 15px;" disabled>🖼️ تحويل إلى PDF</button>
-            <div class="progress-container" id="img2pdf-progress">
-              <div class="progress-bar"><div class="progress-fill" id="img2pdf-fill"></div></div>
-              <div class="progress-text" id="img2pdf-text">جاري المعالجة...</div>
-            </div>
-            <div class="results-area" id="img2pdf-results"></div>
-          </div>
-
-        </div>
-      </div>
     </div>
+
+    <!-- ===== الصوت ===== -->
     <div id="panel-audio" class="panel">
-      <div class="card">
-        <h2>ضغط الصوت (MP3)</h2>
-        <p class="desc">تقليل حجم الملفات الصوتية وتحويلها لـ MP3. يستهلك موارد المعالج بكثافة.</p>
-        <div class="alert warning" id="audio-lib-warning">
-          ⚠️ <strong>تنبيه:</strong> يرجى تفعيل مكتبة "lamejs" من قسم الإعدادات.
+        <div class="card">
+            <h2><span class="icon-circle">🎵</span> أدوات الصوت <span class="worker-badge">⚡ مشفر نشط</span></h2>
+            <p class="desc">ضغط الصوتيات واستخراج الصوت من الفيديو — مع خيارين: المشفر التقليدي (lamejs) أو مشفر Worker فائق السرعة.</p>
+            <div class="alert warning" id="audio-lib-warning">⚠️ <strong>تنبيه:</strong> يرجى تفعيل إحدى مكتبات الصوت من قسم المكتبات (يُفضّل Worker للسرعة).</div>
+            <div id="audio-tools" style="opacity:0.45;pointer-events:none;">
+                <div class="sub-nav">
+                    <button class="sub-nav-btn active" onclick="switchAudioTool('compress', this)">🎵 ضغط الصوت</button>
+                    <button class="sub-nav-btn" onclick="switchAudioTool('extract', this)">🎬 فيديو ← صوت</button>
+                </div>
+                <div id="audio-sub-compress" class="sub-panel active">
+                    <h3 style="font-weight:700;margin-bottom:4px;">ضغط وتحويل الصوت إلى MP3 <span class="speed-tag">⚡ مُسرَّع</span></h3>
+                    <p class="desc">تقليل حجم الملفات الصوتية مع ترميز MP3 عالي السرعة عبر Web Worker.</p>
+
+                    <div class="section-row">
+                        <p class="section-label">🎯 جودة الترميز (kbps)</p>
+                        <div class="radio-group" id="audio-kbps-group">
+                            <label class="radio-label"><input type="radio" name="audio-kbps" value="64"><span class="radio-custom">64 — صغير جداً</span></label>
+                            <label class="radio-label"><input type="radio" name="audio-kbps" value="96"><span class="radio-custom">96 — صغير</span></label>
+                            <label class="radio-label"><input type="radio" name="audio-kbps" value="128" checked><span class="radio-custom">128 — متوازن ⭐</span></label>
+                            <label class="radio-label"><input type="radio" name="audio-kbps" value="192"><span class="radio-custom">192 — عالي</span></label>
+                            <label class="radio-label"><input type="radio" name="audio-kbps" value="320"><span class="radio-custom">320 — ممتاز</span></label>
+                        </div>
+                    </div>
+
+                    <div class="section-row">
+                        <p class="section-label">🔊 القنوات</p>
+                        <div class="radio-group" id="audio-channels-group">
+                            <label class="radio-label"><input type="radio" name="audio-channels" value="auto" checked><span class="radio-custom">تلقائي</span></label>
+                            <label class="radio-label"><input type="radio" name="audio-channels" value="1"><span class="radio-custom">Mono (أسرع 2×)</span></label>
+                            <label class="radio-label"><input type="radio" name="audio-channels" value="2"><span class="radio-custom">Stereo</span></label>
+                        </div>
+                    </div>
+
+                    <div class="section-row">
+                        <p class="section-label">📊 معدل العينة (Sample Rate)</p>
+                        <div class="radio-group" id="audio-sr-group">
+                            <label class="radio-label"><input type="radio" name="audio-sr" value="original" checked><span class="radio-custom">الأصلي</span></label>
+                            <label class="radio-label"><input type="radio" name="audio-sr" value="44100"><span class="radio-custom">44.1 kHz (CD)</span></label>
+                            <label class="radio-label"><input type="radio" name="audio-sr" value="22050"><span class="radio-custom">22.05 kHz (أسرع)</span></label>
+                            <label class="radio-label"><input type="radio" name="audio-sr" value="16000"><span class="radio-custom">16 kHz (كلام)</span></label>
+                        </div>
+                    </div>
+
+                    <div class="section-row">
+                        <p class="section-label">⚙️ وضع التشفير</p>
+                        <div class="radio-group" id="audio-mode-group">
+                            <label class="radio-label"><input type="radio" name="audio-mode" value="cbr" checked><span class="radio-custom">CBR — متوافق</span></label>
+                            <label class="radio-label"><input type="radio" name="audio-mode" value="vbr"><span class="radio-custom">VBR — جودة/حجم أفضل</span></label>
+                        </div>
+                    </div>
+
+                    <div class="drop-zone"><input type="file" accept="audio/*" id="audio-input"><h3 id="audio-drop-text">ارفع ملف صوتي</h3></div>
+                    <button class="btn" id="audio-btn" style="margin-top:14px;" disabled>🎵 بدء الضغط</button>
+                    <div class="progress-container" id="audio-progress"><div class="progress-header"><span class="progress-text" id="audio-text"></span><button class="btn-cancel" id="audio-cancel-btn" style="display:none;">✕ إلغاء</button></div><div class="progress-bar"><div class="progress-fill" id="audio-fill"></div></div></div>
+                    <div class="results-area" id="audio-results"></div>
+                </div>
+                <div id="audio-sub-extract" class="sub-panel">
+                    <h3 style="font-weight:700;margin-bottom:4px;">استخراج الصوت من الفيديو <span class="speed-tag">⚡ مُسرَّع</span></h3>
+                    <p class="desc">فك تشفير صوت الفيديو عبر Web Audio API ثم تحويله إلى MP3 بسرعة عالية.</p>
+                    <div class="alert info">ℹ️ يدعم MP4 و WebM. الصيغ القديمة قد لا تعمل في جميع المتصفحات.</div>
+
+                    <div class="section-row">
+                        <p class="section-label">🎯 جودة الترميز (kbps)</p>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="vid-audio-kbps" value="64"><span class="radio-custom">64</span></label>
+                            <label class="radio-label"><input type="radio" name="vid-audio-kbps" value="96"><span class="radio-custom">96</span></label>
+                            <label class="radio-label"><input type="radio" name="vid-audio-kbps" value="128" checked><span class="radio-custom">128 ⭐</span></label>
+                            <label class="radio-label"><input type="radio" name="vid-audio-kbps" value="192"><span class="radio-custom">192</span></label>
+                        </div>
+                    </div>
+
+                    <div class="section-row">
+                        <p class="section-label">🔊 القنوات</p>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="vid-audio-channels" value="auto" checked><span class="radio-custom">تلقائي</span></label>
+                            <label class="radio-label"><input type="radio" name="vid-audio-channels" value="1"><span class="radio-custom">Mono</span></label>
+                            <label class="radio-label"><input type="radio" name="vid-audio-channels" value="2"><span class="radio-custom">Stereo</span></label>
+                        </div>
+                    </div>
+
+                    <div class="drop-zone"><input type="file" accept="video/*,video/mp4,video/webm" id="vid2audio-input"><h3 id="vid2audio-drop-text">ارفع ملف فيديو لاستخراج صوته</h3></div>
+                    <button class="btn" id="vid2audio-btn" style="margin-top:14px;" disabled>🎵 استخراج الصوت كـ MP3</button>
+                    <div class="progress-container" id="vid2audio-progress"><div class="progress-header"><span class="progress-text" id="vid2audio-text"></span><button class="btn-cancel" id="vid2audio-cancel-btn" style="display:none;">✕ إلغاء</button></div><div class="progress-bar"><div class="progress-fill" id="vid2audio-fill"></div></div></div>
+                    <div class="results-area" id="vid2audio-results"></div>
+                </div>
+            </div>
         </div>
-        <div id="audio-tools" style="opacity: 0.5; pointer-events: none;">
-          <div class="drop-zone">
-            <input type="file" accept="audio/*" id="audio-input">
-            <h3 id="audio-drop-text">ارفع ملف صوتي</h3>
-          </div>
-          <button class="btn" id="audio-btn" style="margin-top: 15px;" disabled>بدء الضغط (CPU مكثف)</button>
-          <div class="progress-container" id="audio-progress">
-            <div class="progress-bar"><div class="progress-fill" id="audio-fill"></div></div>
-            <div class="progress-text" id="audio-text">جاري المعالجة...</div>
-          </div>
-          <div class="results-area" id="audio-results"></div>
-        </div>
-      </div>
     </div>
+
+    <!-- ===== الفيديو ===== -->
     <div id="panel-video" class="panel">
-      <div class="card">
-        <h2>ضغط الفيديو (🎬 الوحش)</h2>
-        <p class="desc">ضغط الفيديوهات محلياً داخل المتصفح باستخدام FFmpeg.wasm.</p>
-        <div class="alert danger">
-          🔥 <strong>تحذير الأداء:</strong> هذه العملية تستهلك البطارية والمعالج بشدة. <strong>يُمنع منعاً باتاً</strong> الخروج من المتصفح أثناء الضغط لضمان عدم تلف الملف بسبب أنظمة توفير الطاقة في هاتفك.
+        <div class="card">
+            <h2><span class="icon-circle">🎬</span> أدوات الفيديو</h2>
+            <p class="desc">ضغط الفيديو محلياً داخل المتصفح باستخدام FFmpeg.wasm.</p>
+            <div class="alert danger">🔥 <strong>تحذير:</strong> هذه العمليات تستهلك المعالج والبطارية بشدة. يُمنع الخروج من المتصفح أثناء المعالجة.</div>
+            <div class="alert warning" id="video-lib-warning">⚠️ <strong>تنبيه:</strong> مكتبة FFmpeg.wasm (~30MB) غير مفعلة.</div>
+            <div id="video-tools" style="opacity:0.45;pointer-events:none;">
+                <div id="video-sub-compress" class="sub-panel active">
+                    <h3 style="font-weight:700;margin-bottom:4px;">ضغط الفيديو</h3>
+                    <p class="desc">يُخرج ملف MP4 مضغوط بترميز H.264 وجودة متوازنة.</p>
+                    <div class="drop-zone"><input type="file" accept="video/*" id="video-input"><h3 id="video-drop-text">ارفع فيديو للضغط</h3></div>
+                    <button class="btn" id="video-btn" style="margin-top:14px;" disabled>🗜️ بدء ضغط الفيديو</button>
+                    <div class="progress-container" id="video-progress"><div class="progress-header"><span class="progress-text" id="video-text"></span><button class="btn-cancel" id="video-cancel-btn" style="display:none;">✕ إلغاء</button></div><div class="progress-bar"><div class="progress-fill" id="video-fill"></div></div></div>
+                    <div class="results-area" id="video-results"></div>
+                </div>
+            </div>
         </div>
-        <div class="alert info">
-          ℹ️ <strong>ملاحظة فنية:</strong> FFmpeg.wasm يحتاج بيئة "Cross-Origin Isolated" (رؤوس COOP/COEP) ليعمل في كل المتصفحات. لو ظهر خطأ تحميل، فهذا يعني أن الخادم المستضيف للصفحة لا يوفر هذه الرؤوس — وهذا قيد من المتصفح نفسه وليس خطأ في الكود.
-        </div>
-        <div class="alert warning" id="video-lib-warning">
-          ⚠️ <strong>تنبيه:</strong> مكتبة FFmpeg.wasm (~30MB) غير مفعلة. يرجى تفعيلها من قسم الإعدادات.
-        </div>
-        <div id="video-tools" style="opacity: 0.5; pointer-events: none;">
-          <div class="drop-zone">
-            <input type="file" accept="video/*" id="video-input">
-            <h3 id="video-drop-text">ارفع فيديو للضغط</h3>
-          </div>
-          <button class="btn" id="video-btn" style="margin-top: 15px;" disabled>بدء الضغط</button>
-          <div class="progress-container" id="video-progress">
-            <div class="progress-bar"><div class="progress-fill" id="video-fill"></div></div>
-            <div class="progress-text" id="video-text">جاري المعالجة...</div>
-          </div>
-          <div class="results-area" id="video-results"></div>
-        </div>
-      </div>
     </div>
+
+    <!-- ===== المكتبات ===== -->
     <div id="panel-libraries" class="panel">
-      <div class="card">
-        <h2>⚙️ مدير المكتبات والتحميل المحلي</h2>
-        <p class="desc">قم بتحميل المكتبة من الإنترنت لمرة واحدة (تبقى مفعّلة طوال هذه الجلسة فقط)، أو ارفع ملف JS محلي للعمل بدون إنترنت. <strong>ملاحظة:</strong> التفعيل مؤقت لكل جلسة متصفح — عند إعادة تحميل الصفحة (Refresh) يجب تفعيل المكتبات من جديد لأن المتصفح لا يحتفظ بأكواد JS المحقونة ديناميكياً بين الجلسات.</p>
-        
-        <div class="lib-grid">
-          
-          <div class="lib-card">
-            <div class="lib-header">
-              <h3><span class="lib-status" id="status-pdf"></span> pdf-lib.js</h3>
-              <span class="lib-size">~500 KB</span>
+        <div class="card">
+            <h2><span class="icon-circle">⚙️</span> مدير المكتبات والتحميل المحلي</h2>
+            <p class="desc">حمّل المكتبة من الإنترنت لمرة واحدة، أو ارفع ملف JS محلي للعمل بدون إنترنت. التفعيل مؤقت لكل جلسة.</p>
+            <div class="lib-grid">
+                <div class="lib-card">
+                    <div class="lib-header"><h3><span class="lib-status" id="status-pdf"></span> pdf-lib.js</h3><span class="lib-size">~500 KB</span></div>
+                    <p style="font-size:0.76rem;color:var(--muted);margin-bottom:6px;">لدمج وتقسيم وضغط PDF وتحويل الصور إليه.</p>
+                    <div class="lib-actions">
+                        <button class="lib-btn btn-online" onclick="loadLibrary('pdf','https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js',this)">☁️ جلب وتفعيل</button>
+                        <button class="lib-btn btn-local">📂 ملف محلي<input type="file" accept=".js" onchange="loadLocalLibrary(event,'pdf')"></button>
+                    </div>
+                </div>
+                <div class="lib-card">
+                    <div class="lib-header"><h3><span class="lib-status" id="status-audio"></span> lame.min.js (تقليدي)</h3><span class="lib-size">~150 KB</span></div>
+                    <p style="font-size:0.76rem;color:var(--muted);margin-bottom:6px;">مشفر MP3 بجافاسكريبت نقي — يعمل داخل Worker أيضاً.</p>
+                    <div class="lib-actions">
+                        <button class="lib-btn btn-online" onclick="loadLibrary('audio','https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js',this)">☁️ جلب وتفعيل</button>
+                        <button class="lib-btn btn-local">📂 ملف محلي<input type="file" accept=".js" onchange="loadLocalLibrary(event,'audio')"></button>
+                    </div>
+                </div>
+                <div class="lib-card" style="border-color:rgba(13,204,130,0.4);">
+                    <div class="lib-header"><h3><span class="lib-status" id="status-audio-wasm"></span> lame.min.js + Worker (سريع جداً)</h3><span class="lib-size" style="color:var(--success);">~150 KB ⚡</span></div>
+                    <p style="font-size:0.76rem;color:var(--muted);margin-bottom:6px;">نفس مكتبة lamejs لكن تعمل داخل <strong>Web Worker محسّن</strong> مع chunks ضخمة — <strong>أسرع 60 مرة من السابق</strong>.<br><strong>مُوصى به بشدة.</strong></p>
+                    <div class="lib-actions">
+                        <button class="lib-btn btn-online" onclick="loadLibraryWasm('https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js', this)">☁️ جلب وتفعيل (Worker)</button>
+                        <button class="lib-btn btn-local">📂 ملف محلي (lame.min.js)<input type="file" accept=".js" onchange="loadLocalLibraryWasm(event)"></button>
+                    </div>
+                </div>
+                <div class="lib-card" style="border-color:rgba(247,108,108,0.3);">
+                    <div class="lib-header"><h3><span class="lib-status" id="status-video"></span> FFmpeg.wasm</h3><span class="lib-size" style="color:var(--danger);">~30 MB ⚠️</span></div>
+                    <p style="font-size:0.76rem;color:var(--muted);margin-bottom:6px;">لضغط الفيديو. مكتبة ضخمة يُفضّل الواي فاي.</p>
+                    <div class="lib-actions">
+                        <button class="lib-btn btn-online" onclick="loadVideoLibrary(this)">☁️ جلب وتفعيل</button>
+                        <button class="lib-btn btn-local">📂 ملف محلي<input type="file" accept=".js" onchange="loadLocalLibrary(event,'video')"></button>
+                    </div>
+                </div>
             </div>
-            <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 10px;">لدمج وتقسيم وضغط ملفات PDF وتحويل الصور إليها.</p>
-            <div class="lib-actions">
-              <button class="lib-btn btn-online" onclick="loadLibrary('pdf', 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js')">☁️ جلب وتفعيل (نت)</button>
-              <button class="lib-btn btn-local">
-                📂 ملف محلي
-                <input type="file" accept=".js" onchange="loadLocalLibrary(event, 'pdf')">
-              </button>
-            </div>
-          </div>
-
-          <div class="lib-card">
-            <div class="lib-header">
-              <h3><span class="lib-status" id="status-audio"></span> lame.min.js</h3>
-              <span class="lib-size">~150 KB</span>
-            </div>
-            <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 10px;">لضغط وتحويل الصوتيات لـ MP3.</p>
-            <div class="lib-actions">
-              <button class="lib-btn btn-online" onclick="loadLibrary('audio', 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js')">☁️ جلب وتفعيل (نت)</button>
-              <button class="lib-btn btn-local">
-                📂 ملف محلي
-                <input type="file" accept=".js" onchange="loadLocalLibrary(event, 'audio')">
-              </button>
-            </div>
-          </div>
-
-          <div class="lib-card" style="border-color: rgba(255, 118, 117, 0.4);">
-            <div class="lib-header">
-              <h3><span class="lib-status" id="status-video"></span> FFmpeg.wasm</h3>
-              <span class="lib-size" style="color: var(--danger);">~30 MB ⚠️</span>
-            </div>
-            <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 10px;">لضغط وتعديل الفيديوهات (مكتبة ضخمة جداً، يفضل الواي فاي).</p>
-            <div class="lib-actions">
-              <button class="lib-btn btn-online" onclick="loadVideoLibrary()">☁️ جلب وتفعيل (نت)</button>
-              <button class="lib-btn btn-local">
-                📂 ملف محلي (.js)
-                <input type="file" accept=".js" onchange="loadLocalLibrary(event, 'video')">
-              </button>
-            </div>
-          </div>
-
         </div>
-      </div>
     </div>
-
-  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-// ==========================================
-// 1. نظام التوجيه (Router)
-// ==========================================
-function switchTab(tabId, evt) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-' + tabId).classList.add('active');
-  if (evt && evt.currentTarget) {
-    evt.currentTarget.classList.add('active');
-  }
-}
+(function () {
 
-function switchPdfTool(toolId, evt) {
-  document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.sub-nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('pdf-sub-' + toolId).classList.add('active');
-  if (evt && evt.currentTarget) {
-    evt.currentTarget.classList.add('active');
-  }
-}
-
-// ==========================================
-// 2. حماية الأداء ونظام التشغيل (OS Management)
-// ==========================================
-let wakeLock = null;
-
-async function requestWakeLock() {
-  try {
-    if ('wakeLock' in navigator) {
-      wakeLock = await navigator.wakeLock.request('screen');
-      console.log('🔒 تم قفل الشاشة لمنع الانطفاء.');
+    // ========== 0. TOAST & UTILS ==========
+    function showToast(msg, dur = 3000) {
+        const c = document.getElementById('toast-container');
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => { if (t.parentNode) t.remove(); }, dur + 500);
     }
-  } catch (err) { console.error('فشل قفل الشاشة:', err); }
-}
 
-function releaseWakeLock() {
-  if (wakeLock !== null) {
-    wakeLock.release().then(() => { wakeLock = null; console.log('🔓 تم تحرير قفل الشاشة.'); });
-  }
-}
+    function formatBytes(bytes, d = 2) {
+        if (!+bytes) return '0 Bytes';
+        const k = 1024, s = ['Bytes', 'KB', 'MB', 'GB'],
+              i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(d))} ${s[i]}`;
+    }
 
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    console.warn('⚠️ المستخدم خرج من المتصفح! سرعة المعالجة ستنخفض أو يتم إيقافها من قبل النظام.');
-  } else {
-    console.log('✅ المستخدم عاد. استئناف المعالجة بأقصى سرعة.');
-  }
-});
+    function getFileNameInfo(fn) {
+        const ld = fn.lastIndexOf('.');
+        if (ld === -1) return { name: fn, ext: '' };
+        return { name: fn.substring(0, ld), ext: fn.substring(ld).toLowerCase() };
+    }
 
-// ==========================================
-// 3. أدوات المساعدة (Helper Functions)
-// ==========================================
-function formatBytes(bytes, decimals = 2) {
-    if (!+bytes) return '0 Bytes';
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-}
+    function formatDuration(seconds) {
+        if (!isFinite(seconds) || seconds < 0) return '--:--';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
 
-function getFileNameInfo(filename) {
-    const lastDot = filename.lastIndexOf('.');
-    if (lastDot === -1) return { name: filename, ext: '' };
-    return {
-        name: filename.substring(0, lastDot),
-        ext: filename.substring(lastDot).toLowerCase()
+    // ========== 1. ROUTER ==========
+    window.switchTab = function (tabId, btn) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        const panel = document.getElementById('panel-' + tabId);
+        if (panel) panel.classList.add('active');
+        if (btn) btn.classList.add('active');
     };
-}
+    window.switchPdfTool = function (toolId, btn) {
+        document.querySelectorAll('#pdf-tools .sub-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('#pdf-tools .sub-nav-btn').forEach(b => b.classList.remove('active'));
+        const sp = document.getElementById('pdf-sub-' + toolId);
+        if (sp) sp.classList.add('active');
+        if (btn) btn.classList.add('active');
+    };
+    window.switchAudioTool = function (toolId, btn) {
+        document.querySelectorAll('#audio-tools .sub-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('#audio-tools .sub-nav-btn').forEach(b => b.classList.remove('active'));
+        const sp = document.getElementById('audio-sub-' + toolId);
+        if (sp) sp.classList.add('active');
+        if (btn) btn.classList.add('active');
+    };
 
-function createResultItem(containerId, originalFile, newBlob, extension) {
-    const container = document.getElementById(containerId);
-    const fileInfo = getFileNameInfo(originalFile.name);
-    
-    const resultDiv = document.createElement('div');
-    resultDiv.className = 'result-item';
-    
-    const objectUrl = URL.createObjectURL(newBlob);
-    
-    resultDiv.innerHTML = `
-        <div class="result-info">
+    // ========== 2. WAKE LOCK & CANCEL ==========
+    let wakeLock = null;
+    let activeOps = 0;
+    let globalCancel = false;
+    let currentWorker = null;
+
+    async function requestWakeLock() {
+        activeOps++;
+        try {
+            if ('wakeLock' in navigator && !wakeLock)
+                wakeLock = await navigator.wakeLock.request('screen');
+        } catch (_) {}
+    }
+
+    function releaseWakeLock() {
+        activeOps = Math.max(0, activeOps - 1);
+        if (activeOps === 0 && wakeLock) {
+            wakeLock.release().then(() => { wakeLock = null; }).catch(() => {});
+        }
+    }
+
+    document.addEventListener('visibilitychange', async () => {
+        if (!document.hidden && activeOps > 0 && !wakeLock && 'wakeLock' in navigator) {
+            try { wakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
+        }
+    });
+
+    function cancelOperation() {
+        globalCancel = true;
+        if (currentWorker) {
+            try { currentWorker.terminate(); } catch (_) {}
+            currentWorker = null;
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('btn-cancel')) {
+            cancelOperation();
+        }
+    });
+
+    // ========== 3. RESULTS ==========
+    function createResultItem(containerId, origFile, newBlob, ext, extraInfo) {
+        const container = document.getElementById(containerId);
+        const info = getFileNameInfo(origFile.name);
+        const div = document.createElement('div');
+        div.className = 'result-item';
+        const url = URL.createObjectURL(newBlob);
+        const saved = origFile.size - newBlob.size;
+        const pct = origFile.size > 0 ? Math.round((saved / origFile.size) * 100) : 0;
+
+        const sizeClass = pct >= 0 ? 'saved' : 'bigger';
+        const sizeLabel = pct >= 0
+            ? `الجديد: ${formatBytes(newBlob.size)} · وُفّر ${pct}%`
+            : `الجديد: ${formatBytes(newBlob.size)} · أكبر بـ ${Math.abs(pct)}%`;
+
+        const extraHtml = extraInfo ? `<span class="size-badge">${extraInfo}</span>` : '';
+
+        div.innerHTML = `
+          <div class="result-info">
             <div class="input-group">
-                <input type="text" class="file-name-input" value="${fileInfo.name}_compressed" placeholder="اكتب اسم الملف هنا...">
-                <span class="ext">${extension}</span>
+              <input type="text" class="file-name-input" value="${info.name}_compressed">
+              <span class="ext">${ext}</span>
             </div>
             <div class="result-stats">
-                <span class="size-badge">الحجم الأصلي: ${formatBytes(originalFile.size)}</span>
-                <span class="size-badge" style="color: var(--success); border-color: var(--success);">الحجم الجديد: ${formatBytes(newBlob.size)}</span>
+              <span class="size-badge">الأصلي: ${formatBytes(origFile.size)}</span>
+              <span class="size-badge ${sizeClass}">${sizeLabel}</span>
+              ${extraHtml}
             </div>
-        </div>
-        <button class="download-btn">
-            ⬇️ تحميل
-        </button>
-    `;
-
-    const downloadBtn = resultDiv.querySelector('.download-btn');
-    const nameInput = resultDiv.querySelector('.file-name-input');
-    
-    downloadBtn.addEventListener('click', () => {
-        const finalName = nameInput.value.trim() || 'file';
-        const a = document.createElement('a');
-        a.href = objectUrl;
-        a.download = `${finalName}${extension}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    });
-
-    container.appendChild(resultDiv);
-}
-
-function showError(containerId, message) {
-    const container = document.getElementById(containerId);
-    const errorMsg = document.createElement('div');
-    errorMsg.className = 'alert danger';
-    errorMsg.innerHTML = `⚠️ ${message}`;
-    container.appendChild(errorMsg);
-}
-
-// ==========================================
-// 4. مدير المكتبات (تحميل ديناميكي لهذه الجلسة فقط)
-// ==========================================
-const state = { pdf: false, audio: false, video: false };
-
-function injectScript(codeString, type) {
-  return new Promise((resolve, reject) => {
-    try {
-      const script = document.createElement('script');
-      script.textContent = codeString;
-      document.body.appendChild(script);
-      enableModule(type);
-      resolve();
-    } catch (e) {
-      reject(e);
-    }
-  });
-}
-
-function loadLocalLibrary(event, type) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    injectScript(e.target.result, type)
-      .then(() => alert(`تم تحميل مكتبة ${type} من جهازك بنجاح!`))
-      .catch(() => alert('حدث خطأ أثناء تشغيل المكتبة المحلية.'));
-  };
-  reader.onerror = function() {
-    alert('تعذرت قراءة الملف المحلي.');
-  };
-  reader.readAsText(file);
-}
-
-async function loadLibrary(type, url) {
-  try {
-    const btn = event ? event.currentTarget : null;
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التحميل...'; }
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('فشل الاستجابة من الخادم');
-    const code = await response.text();
-    await injectScript(code, type);
-    alert(`تم التحميل والتفعيل! المكتبة جاهزة للعمل لهذه الجلسة.`);
-    if (btn) { btn.disabled = false; btn.textContent = '☁️ جلب وتفعيل (نت)'; }
-  } catch (e) {
-    alert('فشل التحميل. تأكد من اتصالك بالإنترنت وحاول مجدداً.');
-    const btn = event ? event.currentTarget : null;
-    if (btn) { btn.disabled = false; btn.textContent = '☁️ جلب وتفعيل (نت)'; }
-  }
-}
-
-// تحميل خاص لمكتبة الفيديو: FFmpeg.wasm من نوع UMD عبر CDN رسمي،
-// مع توضيح أنها تحتاج بيئة Cross-Origin Isolated لتعمل فعلياً.
-async function loadVideoLibrary() {
-  try {
-    if (!window.crossOriginIsolated) {
-      alert('تنبيه: هذه الصفحة ليست في بيئة Cross-Origin Isolated. سيتم تحميل المكتبة، لكن قد تفشل عمليات الترميز الفعلية حتى يتم تشغيل الصفحة عبر خادم يوفر رؤوس COOP/COEP.');
-    }
-    const btn = event ? event.currentTarget : null;
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري تحميل ~30MB...'; }
-
-    await loadScriptTag('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js');
-    await loadScriptTag('https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js');
-
-    enableModule('video');
-    alert('تم تحميل وتفعيل FFmpeg.wasm لهذه الجلسة.');
-    if (btn) { btn.disabled = false; btn.textContent = '☁️ جلب وتفعيل (نت)'; }
-  } catch (e) {
-    alert('فشل تحميل مكتبة الفيديو. تأكد من الاتصال بالإنترنت.');
-    const btn = event ? event.currentTarget : null;
-    if (btn) { btn.disabled = false; btn.textContent = '☁️ جلب وتفعيل (نت)'; }
-  }
-}
-
-function loadScriptTag(src) {
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('تعذر تحميل ' + src));
-    document.body.appendChild(s);
-  });
-}
-
-function enableModule(type) {
-  state[type] = true;
-  document.getElementById(`status-${type}`).classList.add('active');
-  document.getElementById(`${type}-lib-warning`).style.display = 'none';
-  const tools = document.getElementById(`${type}-tools`);
-  tools.style.opacity = '1';
-  tools.style.pointerEvents = 'auto';
-}
-
-// ==========================================
-// 5. معالجة الصور محلياً (Zero External Libraries)
-// ==========================================
-document.getElementById('img-input').addEventListener('change', async function(e) {
-  const files = e.target.files;
-  if (!files.length) return;
-
-  const dropZone = document.getElementById('img-drop');
-  const fileInput = document.getElementById('img-input');
-  const radioButtons = document.querySelectorAll('input[name="comp-level"]');
-  
-  dropZone.classList.add('disabled');
-  fileInput.disabled = true;
-  radioButtons.forEach(radio => radio.disabled = true);
-
-  const selectedLevel = document.querySelector('input[name="comp-level"]:checked').value;
-
-  const progContainer = document.getElementById('img-progress');
-  const progFill = document.getElementById('img-fill');
-  const progText = document.getElementById('img-text');
-  const resultsArea = document.getElementById('img-results');
-  
-  resultsArea.innerHTML = '';
-  progContainer.classList.add('show');
-  await requestWakeLock(); 
-
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    progText.innerText = `⏳ جاري العمل: معالجة الصورة ${i + 1} من ${files.length} (ممنوع رفع ملفات جديدة)...`;
-    progFill.style.width = `${((i) / files.length) * 100}%`;
-
-    try {
-      const compressedBlob = await compressSingleImage(file, selectedLevel);
-      createResultItem('img-results', file, compressedBlob, '.jpg');
-    } catch (err) {
-      console.error("تم تخطي ملف بسبب خطأ:", err);
-      showError('img-results', `فشلت معالجة الملف: <strong>${file.name}</strong> (تأكد أنه صورة صالحة).`);
-    }
-  }
-
-  progFill.style.width = '100%';
-  progText.innerText = `✅ اكتملت العملية! يمكنك الآن رفع ملفات جديدة.`;
-  releaseWakeLock();
-
-  dropZone.classList.remove('disabled');
-  fileInput.disabled = false;
-  radioButtons.forEach(radio => radio.disabled = false);
-  
-  fileInput.value = '';
-});
-
-function compressSingleImage(file, level) {
-  return new Promise((resolve, reject) => {
-    if (!file.type.startsWith('image/')) {
-        return reject(new Error("الملف ليس صورة"));
+          </div>
+          <button class="download-btn">⬇️ تحميل</button>`;
+        const dbtn = div.querySelector('.download-btn');
+        const inp = div.querySelector('.file-name-input');
+        dbtn.addEventListener('click', () => {
+            const nm = inp.value.trim() || 'file';
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${nm}${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+        container.appendChild(div);
     }
 
-    const imgUrl = URL.createObjectURL(file);
-    const img = new Image();
-    
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      let scale = 0.8;
-      let quality = 0.7;
+    function showError(containerId, msg) {
+        const container = document.getElementById(containerId);
+        const d = document.createElement('div');
+        d.className = 'alert danger';
+        d.innerHTML = `⚠️ ${msg}`;
+        container.appendChild(d);
+    }
 
-      if (level === 'light') {
-        scale = 0.9;
-        quality = 0.8;
-      } else if (level === 'medium') {
-        scale = 0.7;
-        quality = 0.6;
-      } else if (level === 'heavy') {
-        scale = 0.5;
-        quality = 0.4;
-      }
-      
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      
-      canvas.toBlob((blob) => {
-        URL.revokeObjectURL(imgUrl);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        if (blob) {
-            resolve(blob);
-        } else {
-            reject(new Error("فشل تحويل الكانفاس إلى صورة"));
-        }
-      }, 'image/jpeg', quality); 
+    // ========== 4. LIBRARY MANAGER ==========
+    const state = { pdf: false, audio: false, audioWasm: false, video: false };
+    let lamejsCode = '';
+
+    function injectScript(codeStr, type) {
+        return new Promise((resolve, reject) => {
+            try {
+                if (type === 'audio') lamejsCode = codeStr;
+                const s = document.createElement('script');
+                s.textContent = codeStr;
+                document.body.appendChild(s);
+                resolve();
+            } catch (e) { reject(e); }
+        });
+    }
+
+    window.loadLocalLibrary = function (ev, type) {
+        const file = ev.target.files[0];
+        if (!file) return;
+        const r = new FileReader();
+        r.onload = function (e) {
+            injectScript(e.target.result, type).then(() => {
+                enableModule(type);
+                showToast('✅ تم تحميل المكتبة من جهازك!');
+            }).catch(() => showToast('❌ خطأ أثناء تشغيل المكتبة المحلية.'));
+        };
+        r.onerror = () => showToast('❌ تعذرت قراءة الملف.');
+        r.readAsText(file);
     };
 
-    img.onerror = () => {
-        URL.revokeObjectURL(imgUrl);
-        reject(new Error("الصورة تالفة أو غير صالحة للقراءة"));
-    };
-
-    img.src = imgUrl;
-  });
-}
-
-// ==========================================
-// 6. تفاعل واجهات اختيار الملفات (PDF / Audio / Video)
-// ==========================================
-function setupFileInputUI(inputId, textId, btnId, libType) {
-  const inputElement = document.getElementById(inputId);
-  const textElement = document.getElementById(textId);
-  const btnElement = document.getElementById(btnId);
-
-  if (inputElement) {
-    inputElement.addEventListener('change', function(e) {
-      const files = e.target.files;
-      
-      if (files.length > 0) {
-        if (files.length === 1) {
-          textElement.innerHTML = `✅ تم اختيار: <strong style="color: var(--primary);">${files[0].name}</strong>`;
-        } else {
-          textElement.innerHTML = `📑 تم اختيار <strong style="color: var(--primary);">${files.length}</strong> ملفات`;
-        }
-        btnElement.disabled = !state[libType];
-        if (!state[libType]) {
-          alert('يرجى تفعيل المكتبة المطلوبة أولاً من تبويب "المكتبات".');
-        }
-      } else {
-        textElement.innerHTML = "اسحب الملفات هنا أو انقر للاختيار";
-        btnElement.disabled = true;
-      }
-    });
-  }
-}
-
-setupFileInputUI('pdf-input', 'pdf-drop-text', 'pdf-btn', 'pdf');
-setupFileInputUI('split-input', 'split-drop-text', 'split-btn', 'pdf');
-setupFileInputUI('compress-input', 'compress-drop-text', 'compress-btn', 'pdf');
-setupFileInputUI('img2pdf-input', 'img2pdf-drop-text', 'img2pdf-btn', 'pdf');
-setupFileInputUI('audio-input', 'audio-drop-text', 'audio-btn', 'audio');
-setupFileInputUI('video-input', 'video-drop-text', 'video-btn', 'video');
-
-document.querySelectorAll('input[name="split-mode"]').forEach(radio => {
-  radio.addEventListener('change', function() {
-    document.getElementById('split-custom-wrap').style.display = (this.value === 'custom') ? 'block' : 'none';
-  });
-});
-
-// ==========================================
-// 7. دمج ملفات PDF (pdf-lib)
-// ==========================================
-document.getElementById('pdf-btn').addEventListener('click', async function() {
-  const fileInput = document.getElementById('pdf-input');
-  const files = fileInput.files;
-  const btn = this;
-  const resultsArea = document.getElementById('pdf-results');
-  const progContainer = document.getElementById('pdf-progress');
-  const progFill = document.getElementById('pdf-fill');
-  const progText = document.getElementById('pdf-text');
-
-  if (!state.pdf || typeof PDFLib === 'undefined') {
-    alert('مكتبة pdf-lib غير مفعلة. فعّلها أولاً من تبويب المكتبات.');
-    return;
-  }
-  if (!files || files.length < 2) {
-    alert('يرجى اختيار ملفين أو أكثر (PDF أو صور) لدمجهما.');
-    return;
-  }
-
-  resultsArea.innerHTML = '';
-  btn.disabled = true;
-  fileInput.disabled = true;
-  progContainer.classList.add('show');
-  progFill.style.width = '0%';
-  await requestWakeLock();
-
-  try {
-    const { PDFDocument } = PDFLib;
-    const mergedPdf = await PDFDocument.create();
-    let totalOriginalSize = 0;
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      totalOriginalSize += file.size;
-      progText.innerText = `⏳ جاري دمج الملف ${i + 1} من ${files.length}: ${file.name}`;
-      progFill.style.width = `${(i / files.length) * 100}%`;
-
-      const ext = getFileNameInfo(file.name).ext;
-      const isPdfFile = file.type === 'application/pdf' || ext === '.pdf';
-      const isImageFile = file.type.startsWith('image/');
-
-      if (isPdfFile) {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
-      } else if (isImageFile) {
-        const image = await embedImageInPdf(mergedPdf, file);
-        const page = mergedPdf.addPage([image.width, image.height]);
-        page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
-      } else {
-        throw new Error(`نوع ملف غير مدعوم: ${file.name} (مسموح فقط PDF أو صور)`);
-      }
-    }
-
-    progText.innerText = '⏳ جاري إنشاء الملف النهائي...';
-    progFill.style.width = '95%';
-
-    const mergedBytes = await mergedPdf.save();
-    const mergedBlob = new Blob([mergedBytes], { type: 'application/pdf' });
-
-    progFill.style.width = '100%';
-    progText.innerText = `✅ تم الدمج بنجاح! (${files.length} ملفات)`;
-
-    const fakeOriginal = { name: 'merged_document.pdf', size: totalOriginalSize };
-    createResultItem('pdf-results', fakeOriginal, mergedBlob, '.pdf');
-
-  } catch (err) {
-    console.error(err);
-    showError('pdf-results', 'فشل دمج الملفات. تأكد أن كل الملفات بصيغة PDF أو صور صالحة، وغير محمية بكلمة مرور معقدة.');
-  } finally {
-    releaseWakeLock();
-    btn.disabled = false;
-    fileInput.disabled = false;
-    fileInput.value = '';
-    document.getElementById('pdf-drop-text').innerHTML = 'ارفع ملفات PDF و/أو صور (٢ أو أكثر للدمج)';
-  }
-});
-
-// ==========================================
-// 8. تقسيم ملف PDF إلى صفحات منفصلة (pdf-lib + JSZip)
-// ==========================================
-document.getElementById('split-btn').addEventListener('click', async function() {
-  const fileInput = document.getElementById('split-input');
-  const file = fileInput.files[0];
-  const btn = this;
-  const resultsArea = document.getElementById('split-results');
-  const progContainer = document.getElementById('split-progress');
-  const progFill = document.getElementById('split-fill');
-  const progText = document.getElementById('split-text');
-
-  if (!state.pdf || typeof PDFLib === 'undefined') {
-    alert('مكتبة pdf-lib غير مفعلة. فعّلها أولاً من تبويب المكتبات.');
-    return;
-  }
-  if (typeof JSZip === 'undefined') {
-    alert('مكتبة JSZip لم يتم تحميلها (مطلوبة لتجميع الصفحات). تأكد من اتصالك بالإنترنت وأعد تحميل الصفحة.');
-    return;
-  }
-  if (!file) {
-    alert('يرجى اختيار ملف PDF واحد للتقسيم.');
-    return;
-  }
-
-  resultsArea.innerHTML = '';
-  btn.disabled = true;
-  fileInput.disabled = true;
-  progContainer.classList.add('show');
-  progFill.style.width = '0%';
-  await requestWakeLock();
-
-  try {
-    const { PDFDocument } = PDFLib;
-    const arrayBuffer = await file.arrayBuffer();
-    const srcDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-    const pageCount = srcDoc.getPageCount();
-    const baseName = getFileNameInfo(file.name).name;
-    const splitMode = document.querySelector('input[name="split-mode"]:checked').value;
-
-    // تجهيز مجموعات الصفحات حسب الوضع المختار
-    let groups = [];
-    if (splitMode === 'all') {
-      if (pageCount < 2) {
-        throw new Error('الملف يحتوي على صفحة واحدة فقط، لا حاجة للتقسيم.');
-      }
-      for (let i = 0; i < pageCount; i++) {
-        groups.push({ label: String(i + 1), indices: [i] });
-      }
-    } else {
-      const rangesValue = document.getElementById('split-ranges').value.trim();
-      if (!rangesValue) {
-        throw new Error('يرجى إدخال نطاقات الصفحات المطلوبة، مثال: 1-3, 5, 7-9');
-      }
-      groups = parsePageRanges(rangesValue, pageCount);
-    }
-
-    // حالة وجود مجموعة واحدة فقط: نطلع ملف PDF واحد مباشرة بدون ZIP
-    if (groups.length === 1) {
-      progText.innerText = `⏳ جاري استخراج الصفحات: ${groups[0].label}...`;
-      progFill.style.width = '50%';
-
-      const newDoc = await PDFDocument.create();
-      const copiedPages = await newDoc.copyPages(srcDoc, groups[0].indices);
-      copiedPages.forEach(p => newDoc.addPage(p));
-      const pageBytes = await newDoc.save();
-      const resultBlob = new Blob([pageBytes], { type: 'application/pdf' });
-
-      progFill.style.width = '100%';
-      progText.innerText = `✅ تم استخراج الصفحات (${groups[0].label}) بنجاح!`;
-
-      createResultItem('split-results', file, resultBlob, '.pdf');
-    } else {
-      const zip = new JSZip();
-
-      for (let g = 0; g < groups.length; g++) {
-        const group = groups[g];
-        progText.innerText = `⏳ جاري استخراج المجموعة ${g + 1} من ${groups.length} (صفحات: ${group.label})...`;
-        progFill.style.width = `${(g / groups.length) * 90}%`;
-
-        const newDoc = await PDFDocument.create();
-        const copiedPages = await newDoc.copyPages(srcDoc, group.indices);
-        copiedPages.forEach(p => newDoc.addPage(p));
-        const pageBytes = await newDoc.save();
-        zip.file(`${baseName}_${group.label}.pdf`, pageBytes);
-      }
-
-      progText.innerText = '⏳ جاري تجميع الملفات في ZIP...';
-      progFill.style.width = '95%';
-
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-
-      progFill.style.width = '100%';
-      progText.innerText = `✅ تم التقسيم إلى ${groups.length} ملف بنجاح!`;
-
-      createResultItem('split-results', file, zipBlob, '.zip');
-    }
-
-  } catch (err) {
-    console.error(err);
-    showError('split-results', `فشل تقسيم الملف: ${err.message || 'تأكد أن الملف PDF صالح.'}`);
-  } finally {
-    releaseWakeLock();
-    btn.disabled = false;
-    fileInput.disabled = false;
-    fileInput.value = '';
-    document.getElementById('split-drop-text').innerHTML = 'ارفع ملف PDF واحد للتقسيم';
-  }
-});
-
-// يحوّل نص النطاقات (مثال: "1-3, 5, 7-9") إلى مجموعات من فهارس الصفحات (0-based)
-function parsePageRanges(rangeStr, pageCount) {
-  const groups = [];
-  const tokens = rangeStr.split(',').map(t => t.trim()).filter(Boolean);
-  if (tokens.length === 0) {
-    throw new Error('يرجى إدخال نطاق صفحات صحيح.');
-  }
-  for (const token of tokens) {
-    const indices = [];
-    if (token.includes('-')) {
-      const parts = token.split('-').map(n => parseInt(n.trim(), 10));
-      const a = parts[0], b = parts[1];
-      if (isNaN(a) || isNaN(b) || a < 1 || b < a || b > pageCount) {
-        throw new Error(`نطاق صفحات غير صالح: "${token}" (الملف يحتوي على ${pageCount} صفحة)`);
-      }
-      for (let i = a; i <= b; i++) indices.push(i - 1);
-    } else {
-      const n = parseInt(token, 10);
-      if (isNaN(n) || n < 1 || n > pageCount) {
-        throw new Error(`رقم صفحة غير صالح: "${token}" (الملف يحتوي على ${pageCount} صفحة)`);
-      }
-      indices.push(n - 1);
-    }
-    groups.push({ label: token.replace(/\s+/g, ''), indices });
-  }
-  return groups;
-}
-
-// ==========================================
-// 9. ضغط حجم ملف PDF بثلاثة مستويات (pdf-lib)
-// ==========================================
-document.getElementById('compress-btn').addEventListener('click', async function() {
-  const fileInput = document.getElementById('compress-input');
-  const file = fileInput.files[0];
-  const btn = this;
-  const resultsArea = document.getElementById('compress-results');
-  const progContainer = document.getElementById('compress-progress');
-  const progFill = document.getElementById('compress-fill');
-  const progText = document.getElementById('compress-text');
-  const radioButtons = document.querySelectorAll('input[name="pdf-comp-level"]');
-
-  if (!state.pdf || typeof PDFLib === 'undefined') {
-    alert('مكتبة pdf-lib غير مفعلة. فعّلها أولاً من تبويب المكتبات.');
-    return;
-  }
-  if (!file) {
-    alert('يرجى اختيار ملف PDF للضغط.');
-    return;
-  }
-
-  const level = document.querySelector('input[name="pdf-comp-level"]:checked').value;
-  const settings = {
-    light:  { quality: 0.8, scale: 1.0 },
-    medium: { quality: 0.6, scale: 0.85 },
-    heavy:  { quality: 0.4, scale: 0.65 }
-  }[level];
-
-  resultsArea.innerHTML = '';
-  btn.disabled = true;
-  fileInput.disabled = true;
-  radioButtons.forEach(r => r.disabled = true);
-  progContainer.classList.add('show');
-  progFill.style.width = '0%';
-  await requestWakeLock();
-
-  try {
-    const { PDFDocument, PDFName, PDFRawStream, PDFRef, JpegEmbedder } = PDFLib;
-    const arrayBuffer = await file.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-    const pages = pdfDoc.getPages();
-    let processedImages = 0;
-    let skippedImages = 0;
-    // مهم: كتير من ملفات الـ PDF (خصوصاً الممسوحة ضوئياً) بتخلي كل الصفحات
-    // تشترك في نفس الـ Resources/XObject، أو نفس الصورة بتتكرر بمرجع واحد
-    // عبر صفحات مختلفة. من غير تتبع الصور اللي اتعالجت قبل كده، كنا
-    // بنعالج نفس الصورة من جديد في كل صفحة (بطء شديد + تضخم الحجم بدل
-    // تصغيره لأن النسخة القديمة بتفضل متخزنة كمان كـ "يتيمة" في الملف).
-    const handledRefs = new Set();
-
-    for (let p = 0; p < pages.length; p++) {
-      const page = pages[p];
-      progText.innerText = `⏳ جاري فحص صور الصفحة ${p + 1} من ${pages.length}...`;
-      progFill.style.width = `${(p / pages.length) * 85}%`;
-
-      const resources = page.node.Resources();
-      if (!resources) continue;
-
-      const xObjects = resources.lookup(PDFName.of('XObject'));
-      if (!xObjects || typeof xObjects.keys !== 'function') continue;
-
-      const keys = xObjects.keys();
-      for (const key of keys) {
+    window.loadLibrary = async function (type, url, btn) {
+        const originalText = btn ? btn.textContent : '';
         try {
-          const xObjectRef = xObjects.get(key);
-          const refId = xObjectRef instanceof PDFRef ? xObjectRef.toString() : null;
-          // الصورة دي اتعالجت قبل كده (مرجع متكرر عبر صفحة تانية) → تخطّيها
-          if (refId && handledRefs.has(refId)) continue;
-
-          const xObject = pdfDoc.context.lookup(xObjectRef);
-          if (!(xObject instanceof PDFRawStream)) continue;
-
-          const dict = xObject.dict;
-          const subtype = dict.get(PDFName.of('Subtype'));
-          if (!subtype || subtype.toString() !== '/Image') continue;
-
-          const filter = dict.get(PDFName.of('Filter'));
-          const filterName = filter ? filter.toString() : '';
-
-          // نتعامل فقط مع الصور المضمنة بصيغة JPEG (DCTDecode)
-          if (!filterName.includes('DCTDecode')) {
-            skippedImages++;
-            if (refId) handledRefs.add(refId);
-            continue;
-          }
-
-          const originalJpegBytes = xObject.contents; // البايتات الخام هي JPEG فعلياً
-          const blob = new Blob([originalJpegBytes], { type: 'image/jpeg' });
-          const bitmap = await createImageBitmap(blob);
-
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.max(1, Math.round(bitmap.width * settings.scale));
-          canvas.height = Math.max(1, Math.round(bitmap.height * settings.scale));
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-          bitmap.close && bitmap.close();
-
-          const newBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', settings.quality));
-          const newBytes = new Uint8Array(await newBlob.arrayBuffer());
-
-          // نستبدل فقط لو فعلاً أصغر من الأصل
-          if (newBytes.length < originalJpegBytes.length) {
-            if (refId) {
-              // نكتب الصورة الجديدة فوق نفس الكائن الأصلي بالظبط (in-place)
-              // بدل ما نسجّل كائن جديد ونسيب القديم "يتيم" متخزن في الملف
-              // من غير استخدام — وده اللي كان بيخلي حجم الملف يكبر بدل يصغر.
-              const embedder = await JpegEmbedder.for(newBytes);
-              await embedder.embedIntoContext(pdfDoc.context, xObjectRef);
-            } else {
-              const newImage = await pdfDoc.embedJpg(newBytes);
-              xObjects.set(key, newImage.ref);
-            }
-            processedImages++;
-          }
-          if (refId) handledRefs.add(refId);
-        } catch (imgErr) {
-          console.warn('تخطي صورة بسبب خطأ في المعالجة:', imgErr);
-          skippedImages++;
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التحميل...'; }
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const code = await resp.text();
+            await injectScript(code, type);
+            enableModule(type);
+            showToast('✅ تم التحميل والتفعيل!');
+        } catch (e) {
+            showToast('❌ فشل التحميل: ' + e.message);
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = originalText; }
         }
-      }
+    };
+
+    let wasmWorkerCode = '';
+
+    window.loadLibraryWasm = async function (url, btn) {
+        const originalText = btn ? btn.textContent : '';
+        try {
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري التحميل...'; }
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            wasmWorkerCode = await resp.text();
+            if (!wasmWorkerCode.includes('lamejs') && !wasmWorkerCode.includes('Mp3Encoder'))
+                throw new Error('الملف لا يحتوي على مكتبة lamejs صالحة.');
+            enableModule('audioWasm');
+            showToast('✅ تم تفعيل lamejs Worker!');
+        } catch (e) {
+            showToast('❌ فشل التحميل: ' + e.message);
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = originalText; }
+        }
+    };
+
+    window.loadLocalLibraryWasm = function (ev) {
+        const file = ev.target.files[0];
+        if (!file) return;
+        const r = new FileReader();
+        r.onload = function (e) {
+            wasmWorkerCode = e.target.result;
+            if (!wasmWorkerCode.includes('lamejs') && !wasmWorkerCode.includes('Mp3Encoder')) {
+                showToast('❌ الملف لا يحتوي على مكتبة lamejs صالحة.');
+                return;
+            }
+            enableModule('audioWasm');
+            showToast('✅ تم تفعيل lamejs Worker من ملف محلي!');
+        };
+        r.onerror = () => showToast('❌ تعذرت قراءة الملف.');
+        r.readAsText(file);
+    };
+
+    function enableModule(type) {
+        if (type === 'audioWasm') {
+            state.audioWasm = true;
+            document.getElementById('status-audio-wasm').classList.add('active');
+            document.getElementById('audio-lib-warning').style.display = 'none';
+            document.getElementById('audio-tools').style.opacity = '1';
+            document.getElementById('audio-tools').style.pointerEvents = 'auto';
+        } else if (type === 'audio') {
+            state.audio = true;
+            document.getElementById('status-audio').classList.add('active');
+            document.getElementById('audio-lib-warning').style.display = 'none';
+            document.getElementById('audio-tools').style.opacity = '1';
+            document.getElementById('audio-tools').style.pointerEvents = 'auto';
+        } else {
+            state[type] = true;
+            const st = document.getElementById('status-' + type);
+            if (st) st.classList.add('active');
+            const w = document.getElementById(type + '-lib-warning');
+            if (w) w.style.display = 'none';
+            const tools = document.getElementById(type + '-tools');
+            if (tools) { tools.style.opacity = '1'; tools.style.pointerEvents = 'auto'; }
+        }
+        updateAudioButtons();
     }
 
-    progText.innerText = '⏳ جاري حفظ الملف النهائي...';
-    progFill.style.width = '95%';
-
-    const compressedBytes = await pdfDoc.save({ useObjectStreams: true });
-    const compressedBlob = new Blob([compressedBytes], { type: 'application/pdf' });
-
-    progFill.style.width = '100%';
-
-    if (compressedBlob.size >= file.size) {
-      progText.innerText = '✅ تمت المعالجة (الملف لا يحتوي على صور JPEG كبيرة قابلة للضغط).';
-    } else {
-      progText.innerText = `✅ تم الضغط! (${processedImages} صورة تمت إعادة ضغطها${skippedImages > 0 ? `، تم تخطي ${skippedImages} عنصر غير مدعوم` : ''})`;
+    function updateAudioButtons() {
+        const hasLib = state.audio || state.audioWasm;
+        document.getElementById('audio-btn').disabled = !hasLib;
+        document.getElementById('vid2audio-btn').disabled = !hasLib;
     }
 
-    createResultItem('compress-results', file, compressedBlob, '.pdf');
+    window.loadVideoLibrary = async function (btn) {
+        const originalText = btn ? btn.textContent : '';
+        try {
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري تحميل ~30MB...'; }
+            await loadScriptTag('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js');
+            await loadScriptTag('https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js');
+            enableModule('video');
+            showToast('✅ تم تحميل وتفعيل FFmpeg.wasm.');
+        } catch (e) {
+            showToast('❌ فشل تحميل مكتبة الفيديو: ' + e.message);
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = originalText; }
+        }
+    };
 
-  } catch (err) {
-    console.error(err);
-    showError('compress-results', 'فشل ضغط الملف. تأكد أن الملف PDF صالح وغير محمي بكلمة مرور.');
-  } finally {
-    releaseWakeLock();
-    btn.disabled = false;
-    fileInput.disabled = false;
-    radioButtons.forEach(r => r.disabled = false);
-    fileInput.value = '';
-    document.getElementById('compress-drop-text').innerHTML = 'ارفع ملف PDF للضغط';
-  }
-});
+    function loadScriptTag(src) {
+        return new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error('تعذر تحميل ' + src));
+            document.body.appendChild(s);
+        });
+    }
 
-// ==========================================
-// 10. تحويل الصور إلى ملف PDF (pdf-lib)
-// ==========================================
-document.getElementById('img2pdf-btn').addEventListener('click', async function() {
-  const fileInput = document.getElementById('img2pdf-input');
-  const files = fileInput.files;
-  const btn = this;
-  const resultsArea = document.getElementById('img2pdf-results');
-  const progContainer = document.getElementById('img2pdf-progress');
-  const progFill = document.getElementById('img2pdf-fill');
-  const progText = document.getElementById('img2pdf-text');
+    updateAudioButtons();
 
-  if (!state.pdf || typeof PDFLib === 'undefined') {
-    alert('مكتبة pdf-lib غير مفعلة. فعّلها أولاً من تبويب المكتبات.');
-    return;
-  }
-  if (!files || files.length < 1) {
-    alert('يرجى اختيار صورة واحدة على الأقل.');
-    return;
-  }
+    // ========== 5. IMAGE COMPRESSION ==========
+    function compressSingleImage(file, level, format) {
+        return new Promise((resolve, reject) => {
+            if (!file.type.startsWith('image/'))
+                return reject(new Error('الملف ليس صورة مدعومة. الأنواع المدعومة: JPG, PNG, WebP, GIF, BMP.'));
+            const imgUrl = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                let scale = 0.8, quality = 0.7;
+                if (level === 'light')        { scale = 0.9; quality = 0.82; }
+                else if (level === 'medium')  { scale = 0.7; quality = 0.60; }
+                else if (level === 'heavy')   { scale = 0.5; quality = 0.38; }
+                canvas.width  = Math.max(1, Math.round(img.width  * scale));
+                canvas.height = Math.max(1, Math.round(img.height * scale));
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const mimeMap = { jpeg: 'image/jpeg', webp: 'image/webp', png: 'image/png' };
+                canvas.toBlob((blob) => {
+                    URL.revokeObjectURL(imgUrl);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    if (blob && blob.size > 0) resolve(blob);
+                    else reject(new Error('فشل التحويل — جرّب تنسيقاً آخر أو صورة مختلفة.'));
+                }, mimeMap[format] || 'image/jpeg', format === 'png' ? undefined : quality);
+            };
+            img.onerror = () => { URL.revokeObjectURL(imgUrl); reject(new Error('تعذر فك تشفير الصورة — قد تكون تالفة.')); };
+            img.src = imgUrl;
+        });
+    }
 
-  resultsArea.innerHTML = '';
-  btn.disabled = true;
-  fileInput.disabled = true;
-  progContainer.classList.add('show');
-  progFill.style.width = '0%';
-  await requestWakeLock();
+    document.getElementById('img-input').addEventListener('change', async function (e) {
+        const files = e.target.files;
+        if (!files.length) return;
+        const dropZone = document.getElementById('img-drop');
+        const fi = document.getElementById('img-input');
+        const fmtR = document.querySelectorAll('input[name="img-format"]');
+        const cmpR = document.querySelectorAll('input[name="comp-level"]');
+        const cancelBtn = document.getElementById('img-cancel-btn');
+        const ra = document.getElementById('img-results');
+        const pc = document.getElementById('img-progress');
+        const pf = document.getElementById('img-fill');
+        const pt = document.getElementById('img-text');
+        dropZone.classList.add('disabled');
+        fi.disabled = true;
+        fmtR.forEach(r => r.disabled = true);
+        cmpR.forEach(r => r.disabled = true);
+        ra.innerHTML = '';
+        pc.classList.add('show');
+        pf.style.width = '0%';
+        cancelBtn.style.display = 'inline-flex';
+        globalCancel = false;
+        await requestWakeLock();
+        const format = document.querySelector('input[name="img-format"]:checked').value;
+        const level = document.querySelector('input[name="comp-level"]:checked').value;
+        const extMap = { jpeg: '.jpg', webp: '.webp', png: '.png' };
+        let done = 0;
+        for (let i = 0; i < files.length; i++) {
+            if (globalCancel) break;
+            const file = files[i];
+            pt.innerText = `⏳ معالجة ${i + 1} من ${files.length}: ${file.name}`;
+            pf.style.width = `${(i / files.length) * 100}%`;
+            try {
+                const blob = await compressSingleImage(file, level, format);
+                if (!globalCancel) { createResultItem('img-results', file, blob, extMap[format] || '.jpg'); done++; }
+            } catch (err) {
+                if (!globalCancel) showError('img-results', `فشلت معالجة <strong>${file.name}</strong>: ${err.message}`);
+            }
+        }
+        if (globalCancel) { pt.innerText = '🚫 تم إلغاء العملية.'; showToast('🚫 تم إلغاء معالجة الصور.'); }
+        else { pf.style.width = '100%'; pt.innerText = `✅ اكتملت! عولجت ${done} من ${files.length} صورة.`; }
+        releaseWakeLock();
+        dropZone.classList.remove('disabled');
+        fi.disabled = false;
+        fmtR.forEach(r => r.disabled = false);
+        cmpR.forEach(r => r.disabled = false);
+        fi.value = '';
+        cancelBtn.style.display = 'none';
+        globalCancel = false;
+    });
 
+    // ========== 6. FILE INPUT UI SETUP ==========
+    function setupFileInput(inputId, textId, btnId, libType, minFiles = 1) {
+        const inp = document.getElementById(inputId);
+        const txt = document.getElementById(textId);
+        const btn = document.getElementById(btnId);
+        if (!inp) return;
+        inp.addEventListener('change', function () {
+            const files = inp.files;
+            const hasLib = libType === 'audio'
+                ? (state.audio || state.audioWasm)
+                : state[libType];
+            if (files.length >= minFiles) {
+                txt.innerHTML = files.length === 1
+                    ? `✅ <strong style="color:var(--primary);">${files[0].name}</strong>`
+                    : `📑 <strong style="color:var(--primary);">${files.length}</strong> ملفات`;
+                btn.disabled = !hasLib;
+                if (!hasLib && libType === 'audio')
+                    showToast('⚠️ يرجى تفعيل إحدى مكتبات الصوت من تبويب "المكتبات" أولاً.');
+                else if (!hasLib)
+                    showToast('⚠️ يرجى تفعيل المكتبة من تبويب "المكتبات" أولاً.');
+            } else {
+                txt.innerHTML = 'اسحب الملفات هنا أو انقر للاختيار';
+                btn.disabled = true;
+            }
+        });
+    }
+    setupFileInput('pdf-input',      'pdf-drop-text',      'pdf-btn',      'pdf', 2);
+    setupFileInput('split-input',    'split-drop-text',    'split-btn',    'pdf');
+    setupFileInput('compress-input', 'compress-drop-text', 'compress-btn', 'pdf');
+    setupFileInput('img2pdf-input',  'img2pdf-drop-text',  'img2pdf-btn',  'pdf');
+    setupFileInput('audio-input',    'audio-drop-text',    'audio-btn',    'audio');
+    setupFileInput('vid2audio-input','vid2audio-drop-text','vid2audio-btn','audio');
+    setupFileInput('video-input',    'video-drop-text',    'video-btn',    'video');
+
+    document.querySelectorAll('input[name="split-mode"]').forEach(r => {
+        r.addEventListener('change', function () {
+            document.getElementById('split-custom-wrap').style.display =
+                this.value === 'custom' ? 'block' : 'none';
+        });
+    });
+
+    // ========== 7. PDF MERGE ==========
+    document.getElementById('pdf-btn').addEventListener('click', async function () {
+        const fi = document.getElementById('pdf-input');
+        const files = fi.files;
+        const btn = this;
+        const ra = document.getElementById('pdf-results');
+        const pc = document.getElementById('pdf-progress');
+        const pf = document.getElementById('pdf-fill');
+        const pt = document.getElementById('pdf-text');
+        const cb = document.getElementById('pdf-cancel-btn');
+        if (!state.pdf || typeof PDFLib === 'undefined') { showToast('⚠️ مكتبة pdf-lib غير مفعلة.'); return; }
+        if (!files || files.length < 2) { showToast('⚠️ اختر ملفين أو أكثر.'); return; }
+        ra.innerHTML = '';
+        btn.disabled = true;
+        fi.disabled = true;
+        pc.classList.add('show');
+        pf.style.width = '0%';
+        cb.style.display = 'inline-flex';
+        globalCancel = false;
+        await requestWakeLock();
+        try {
+            const { PDFDocument } = PDFLib;
+            const merged = await PDFDocument.create();
+            let totalSize = 0;
+            for (let i = 0; i < files.length; i++) {
+                if (globalCancel) break;
+                const f = files[i];
+                totalSize += f.size;
+                pt.innerText = `⏳ دمج ${i + 1} من ${files.length}: ${f.name}`;
+                pf.style.width = `${(i / files.length) * 100}%`;
+                const ext = getFileNameInfo(f.name).ext;
+                if (f.type === 'application/pdf' || ext === '.pdf') {
+                    const ab = await f.arrayBuffer();
+                    const pdf = await PDFDocument.load(ab, { ignoreEncryption: true });
+                    const cp = await merged.copyPages(pdf, pdf.getPageIndices());
+                    cp.forEach(p => merged.addPage(p));
+                } else if (f.type.startsWith('image/')) {
+                    const img = await embedImageInPdf(merged, f);
+                    const pg = merged.addPage([img.width, img.height]);
+                    pg.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+                } else throw new Error(`نوع غير مدعوم: ${f.name}`);
+            }
+            if (globalCancel) throw new Error('تم الإلغاء');
+            pt.innerText = '⏳ إنشاء الملف النهائي...';
+            pf.style.width = '95%';
+            const mb = await merged.save();
+            const blob = new Blob([mb], { type: 'application/pdf' });
+            pf.style.width = '100%';
+            pt.innerText = `✅ تم الدمج! (${files.length} ملفات)`;
+            createResultItem('pdf-results', { name: 'merged.pdf', size: totalSize }, blob, '.pdf');
+        } catch (err) {
+            if (err.message === 'تم الإلغاء') { pt.innerText = '🚫 تم الإلغاء.'; showToast('🚫 تم إلغاء الدمج.'); }
+            else showError('pdf-results', `فشل الدمج: ${err.message || 'تأكد أن الملفات صالحة.'}`);
+        } finally {
+            releaseWakeLock();
+            btn.disabled = false;
+            fi.disabled = false;
+            fi.value = '';
+            document.getElementById('pdf-drop-text').innerHTML = 'ارفع ملفين أو أكثر';
+            cb.style.display = 'none';
+            globalCancel = false;
+        }
+    });
+
+    // ========== 8. PDF SPLIT ==========
+    document.getElementById('split-btn').addEventListener('click', async function () {
+        const fi = document.getElementById('split-input');
+        const file = fi.files[0];
+        const btn = this;
+        const ra = document.getElementById('split-results');
+        const pc = document.getElementById('split-progress');
+        const pf = document.getElementById('split-fill');
+        const pt = document.getElementById('split-text');
+        const cb = document.getElementById('split-cancel-btn');
+        if (!state.pdf || typeof PDFLib === 'undefined') { showToast('⚠️ مكتبة pdf-lib غير مفعلة.'); return; }
+        if (typeof JSZip === 'undefined') { showToast('⚠️ مكتبة JSZip لم تُحمّل.'); return; }
+        if (!file) { showToast('⚠️ اختر ملف PDF.'); return; }
+        ra.innerHTML = '';
+        btn.disabled = true;
+        fi.disabled = true;
+        pc.classList.add('show');
+        pf.style.width = '0%';
+        cb.style.display = 'inline-flex';
+        globalCancel = false;
+        await requestWakeLock();
+        try {
+            const { PDFDocument } = PDFLib;
+            const ab = await file.arrayBuffer();
+            const src = await PDFDocument.load(ab, { ignoreEncryption: true });
+            const pc2 = src.getPageCount();
+            const bn = getFileNameInfo(file.name).name;
+            const mode = document.querySelector('input[name="split-mode"]:checked').value;
+            let groups = [];
+            if (mode === 'all') {
+                if (pc2 < 2) throw new Error('الملف يحتوي على صفحة واحدة فقط.');
+                for (let i = 0; i < pc2; i++) groups.push({ label: String(i + 1), indices: [i] });
+            } else {
+                const rv = document.getElementById('split-ranges').value.trim();
+                if (!rv) throw new Error('أدخل نطاقات الصفحات.');
+                groups = parseRanges(rv, pc2);
+            }
+            if (globalCancel) throw new Error('تم الإلغاء');
+            if (groups.length === 1) {
+                pt.innerText = `⏳ استخراج: ${groups[0].label}...`;
+                pf.style.width = '50%';
+                const nd = await PDFDocument.create();
+                const cp = await nd.copyPages(src, groups[0].indices);
+                cp.forEach(p => nd.addPage(p));
+                const pb = await nd.save();
+                const rb = new Blob([pb], { type: 'application/pdf' });
+                pf.style.width = '100%';
+                pt.innerText = `✅ تم استخراج (${groups[0].label})!`;
+                createResultItem('split-results', file, rb, '.pdf');
+            } else {
+                const zip = new JSZip();
+                for (let g = 0; g < groups.length; g++) {
+                    if (globalCancel) break;
+                    const gr = groups[g];
+                    pt.innerText = `⏳ مجموعة ${g + 1} من ${groups.length}: ${gr.label}`;
+                    pf.style.width = `${(g / groups.length) * 90}%`;
+                    const nd = await PDFDocument.create();
+                    const cp = await nd.copyPages(src, gr.indices);
+                    cp.forEach(p => nd.addPage(p));
+                    zip.file(`${bn}_${gr.label}.pdf`, await nd.save());
+                }
+                if (globalCancel) throw new Error('تم الإلغاء');
+                pt.innerText = '⏳ تجميع ZIP...';
+                pf.style.width = '95%';
+                const zb = await zip.generateAsync({ type: 'blob' });
+                pf.style.width = '100%';
+                pt.innerText = `✅ تم التقسيم إلى ${groups.length} ملف!`;
+                createResultItem('split-results', file, zb, '.zip');
+            }
+        } catch (err) {
+            if (err.message === 'تم الإلغاء') { pt.innerText = '🚫 تم الإلغاء.'; showToast('🚫 تم إلغاء التقسيم.'); }
+            else showError('split-results', `فشل التقسيم: ${err.message || 'تأكد أن الملف PDF صالح.'}`);
+        } finally {
+            releaseWakeLock();
+            btn.disabled = false;
+            fi.disabled = false;
+            fi.value = '';
+            document.getElementById('split-drop-text').innerHTML = 'ارفع ملف PDF واحد';
+            cb.style.display = 'none';
+            globalCancel = false;
+        }
+    });
+
+    function parseRanges(rs, pc) {
+        const groups = [];
+        const tokens = rs.split(',').map(t => t.trim()).filter(Boolean);
+        if (!tokens.length) throw new Error('لم يتم إدخال أي نطاق.');
+        for (const tok of tokens) {
+            const idx = [];
+            if (tok.includes('-')) {
+                const [a, b] = tok.split('-').map(n => parseInt(n.trim(), 10));
+                if (isNaN(a) || isNaN(b) || a < 1 || b < a || b > pc)
+                    throw new Error(`النطاق "${tok}" غير صالح. الملف يحتوي ${pc} صفحة.`);
+                for (let i = a; i <= b; i++) idx.push(i - 1);
+            } else {
+                const n = parseInt(tok, 10);
+                if (isNaN(n) || n < 1 || n > pc)
+                    throw new Error(`رقم الصفحة "${tok}" غير صالح. الملف يحتوي ${pc} صفحة.`);
+                idx.push(n - 1);
+            }
+            groups.push({ label: tok.replace(/\s+/g, ''), indices: idx });
+        }
+        return groups;
+    }
+
+    // ========== 9. PDF COMPRESS ==========
+    document.getElementById('compress-btn').addEventListener('click', async function () {
+        const fi = document.getElementById('compress-input');
+        const file = fi.files[0];
+        const btn = this;
+        const ra = document.getElementById('compress-results');
+        const pc = document.getElementById('compress-progress');
+        const pf = document.getElementById('compress-fill');
+        const pt = document.getElementById('compress-text');
+        const cb = document.getElementById('compress-cancel-btn');
+        const cr = document.querySelectorAll('input[name="pdf-comp-level"]');
+        if (!state.pdf || typeof PDFLib === 'undefined') { showToast('⚠️ مكتبة pdf-lib غير مفعلة.'); return; }
+        if (!file) { showToast('⚠️ اختر ملف PDF.'); return; }
+        const level = document.querySelector('input[name="pdf-comp-level"]:checked').value;
+        const sets = { light: { q: 0.8, s: 1.0 }, medium: { q: 0.6, s: 0.85 }, heavy: { q: 0.4, s: 0.65 } }[level];
+        ra.innerHTML = '';
+        btn.disabled = true;
+        fi.disabled = true;
+        cr.forEach(r => r.disabled = true);
+        pc.classList.add('show');
+        pf.style.width = '0%';
+        cb.style.display = 'inline-flex';
+        globalCancel = false;
+        await requestWakeLock();
+        try {
+            const { PDFDocument, PDFName, PDFRawStream, PDFRef } = PDFLib;
+            const ab = await file.arrayBuffer();
+            const doc = await PDFDocument.load(ab, { ignoreEncryption: true });
+            const pages = doc.getPages();
+            let proc = 0, skip = 0;
+            const handled = new Set();
+            for (let p = 0; p < pages.length; p++) {
+                if (globalCancel) break;
+                const pg = pages[p];
+                pt.innerText = `⏳ فحص صور الصفحة ${p + 1} من ${pages.length}...`;
+                pf.style.width = `${(p / pages.length) * 80}%`;
+                const res = pg.node.Resources();
+                if (!res) continue;
+                const xo = res.lookup(PDFName.of('XObject'));
+                if (!xo || typeof xo.keys !== 'function') continue;
+                for (const key of xo.keys()) {
+                    if (globalCancel) break;
+                    try {
+                        const ref = xo.get(key);
+                        const rid = ref instanceof PDFRef ? ref.toString() : null;
+                        if (rid && handled.has(rid)) continue;
+                        const obj = doc.context.lookup(ref);
+                        if (!(obj instanceof PDFRawStream)) continue;
+                        const dict = obj.dict;
+                        const sub = dict.get(PDFName.of('Subtype'));
+                        if (!sub || sub.toString() !== '/Image') continue;
+                        const flt = dict.get(PDFName.of('Filter'));
+                        const fn = flt ? flt.toString() : '';
+                        if (!fn.includes('DCTDecode')) { skip++; if (rid) handled.add(rid); continue; }
+                        const orig = obj.contents;
+                        const blob = new Blob([orig], { type: 'image/jpeg' });
+                        const bmp = await createImageBitmap(blob);
+                        const cv = document.createElement('canvas');
+                        cv.width  = Math.max(1, Math.round(bmp.width  * sets.s));
+                        cv.height = Math.max(1, Math.round(bmp.height * sets.s));
+                        const ctx = cv.getContext('2d');
+                        ctx.drawImage(bmp, 0, 0, cv.width, cv.height);
+                        if (bmp.close) bmp.close();
+                        const nb = await new Promise(res => cv.toBlob(res, 'image/jpeg', sets.q));
+                        const nba = new Uint8Array(await nb.arrayBuffer());
+                        if (nba.length < orig.length) {
+                            const newImg = await doc.embedJpg(nba);
+                            xo.set(key, newImg.ref);
+                            proc++;
+                        }
+                        if (rid) handled.add(rid);
+                    } catch (ie) { skip++; }
+                }
+            }
+            if (globalCancel) throw new Error('تم الإلغاء');
+            pt.innerText = '⏳ تنظيف الكائنات اليتيمة...';
+            pf.style.width = '85%';
+            const clean = await PDFDocument.create();
+            const cpd = await clean.copyPages(doc, doc.getPageIndices());
+            cpd.forEach(pg => clean.addPage(pg));
+            pt.innerText = '⏳ حفظ الملف...';
+            pf.style.width = '95%';
+            const cb2 = await clean.save({ useObjectStreams: true });
+            const cblob = new Blob([cb2], { type: 'application/pdf' });
+            pf.style.width = '100%';
+            const sv = file.size - cblob.size;
+            pt.innerText = cblob.size >= file.size
+                ? '✅ تمت المعالجة (لا توجد صور كبيرة قابلة للضغط).'
+                : `✅ تم الضغط! وُفّر ${formatBytes(sv)} — (${proc} صورة عولجت)`;
+            createResultItem('compress-results', file, cblob, '.pdf');
+        } catch (err) {
+            if (err.message === 'تم الإلغاء') { pt.innerText = '🚫 تم الإلغاء.'; showToast('🚫 تم إلغاء الضغط.'); }
+            else showError('compress-results', `فشل الضغط: ${err.message || 'تأكد أن الملف PDF صالح.'}`);
+        } finally {
+            releaseWakeLock();
+            btn.disabled = false;
+            fi.disabled = false;
+            cr.forEach(r => r.disabled = false);
+            fi.value = '';
+            document.getElementById('compress-drop-text').innerHTML = 'ارفع ملف PDF للضغط';
+            cb.style.display = 'none';
+            globalCancel = false;
+        }
+    });
+
+    // ========== 10. IMAGES TO PDF ==========
+    document.getElementById('img2pdf-btn').addEventListener('click', async function () {
+        const fi = document.getElementById('img2pdf-input');
+        const files = fi.files;
+        const btn = this;
+        const ra = document.getElementById('img2pdf-results');
+        const pc = document.getElementById('img2pdf-progress');
+        const pf = document.getElementById('img2pdf-fill');
+        const pt = document.getElementById('img2pdf-text');
+        const cb = document.getElementById('img2pdf-cancel-btn');
+        if (!state.pdf || typeof PDFLib === 'undefined') { showToast('⚠️ مكتبة pdf-lib غير مفعلة.'); return; }
+        if (!files || files.length < 1) { showToast('⚠️ اختر صورة واحدة على الأقل.'); return; }
+        ra.innerHTML = '';
+        btn.disabled = true;
+        fi.disabled = true;
+        pc.classList.add('show');
+        pf.style.width = '0%';
+        cb.style.display = 'inline-flex';
+        globalCancel = false;
+        await requestWakeLock();
+        try {
+            const { PDFDocument } = PDFLib;
+            const doc = await PDFDocument.create();
+            let ts = 0;
+            for (let i = 0; i < files.length; i++) {
+                if (globalCancel) break;
+                const f = files[i];
+                ts += f.size;
+                pt.innerText = `⏳ إضافة ${i + 1} من ${files.length}: ${f.name}`;
+                pf.style.width = `${(i / files.length) * 90}%`;
+                const img = await embedImageInPdf(doc, f);
+                const pg = doc.addPage([img.width, img.height]);
+                pg.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+            }
+            if (globalCancel) throw new Error('تم الإلغاء');
+            pt.innerText = '⏳ إنشاء PDF...';
+            pf.style.width = '95%';
+            const pb = await doc.save();
+            const blob = new Blob([pb], { type: 'application/pdf' });
+            pf.style.width = '100%';
+            pt.innerText = `✅ تم تحويل ${files.length} صورة إلى PDF!`;
+            createResultItem('img2pdf-results', { name: 'images.pdf', size: ts }, blob, '.pdf');
+        } catch (err) {
+            if (err.message === 'تم الإلغاء') { pt.innerText = '🚫 تم الإلغاء.'; showToast('🚫 تم إلغاء التحويل.'); }
+            else showError('img2pdf-results', `فشل التحويل: ${err.message}`);
+        } finally {
+            releaseWakeLock();
+            btn.disabled = false;
+            fi.disabled = false;
+            fi.value = '';
+            document.getElementById('img2pdf-drop-text').innerHTML = 'ارفع صورة أو أكثر';
+            cb.style.display = 'none';
+            globalCancel = false;
+        }
+    });
+
+    async function embedImageInPdf(doc, file) {
+        if (file.type === 'image/png')
+            return doc.embedPng(new Uint8Array(await file.arrayBuffer()));
+        if (file.type === 'image/jpeg' || file.type === 'image/jpg')
+            return doc.embedJpg(new Uint8Array(await file.arrayBuffer()));
+        const url = URL.createObjectURL(file);
+        const img = await new Promise((res, rej) => {
+            const i = new Image();
+            i.onload = () => res(i);
+            i.onerror = () => rej(new Error('تعذرت قراءة: ' + file.name));
+            i.src = url;
+        });
+        const cv = document.createElement('canvas');
+        cv.width = img.width; cv.height = img.height;
+        cv.getContext('2d').drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        const jb = await new Promise(res => cv.toBlob(res, 'image/jpeg', 0.92));
+        return doc.embedJpg(new Uint8Array(await jb.arrayBuffer()));
+    }
+
+    // ========== 11. AUDIO (محسّن للسرعة) ==========
+    // تحويل Float32 → Int16 بسرعة عالية
+    function floatTo16BitPCM(fa) {
+        const o = new Int16Array(fa.length);
+        for (let i = 0; i < fa.length; i++) {
+            const s = fa[i] < -1 ? -1 : fa[i] > 1 ? 1 : fa[i];
+            o[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        return o;
+    }
+
+    // دمج قناتين في قناة واحدة (mono) — أسرع بمرتين في التشفير
+    function mergeToMono(leftF32, rightF32) {
+        const out = new Float32Array(leftF32.length);
+        for (let i = 0; i < leftF32.length; i++) {
+            out[i] = (leftF32[i] + (rightF32 ? rightF32[i] : 0)) * 0.5;
+        }
+        return out;
+    }
+
+    // Downsampling بسيط (نسبة صحيحة) لتقليل معدل العينة
+    function downsample(buffer, fromRate, toRate) {
+        if (toRate >= fromRate) return buffer;
+        const ratio = fromRate / toRate;
+        const newLen = Math.round(buffer.length / ratio);
+        const result = new Float32Array(newLen);
+        for (let i = 0; i < newLen; i++) {
+            const srcIdx = i * ratio;
+            const lo = Math.floor(srcIdx);
+            const hi = Math.min(lo + 1, buffer.length - 1);
+            const frac = srcIdx - lo;
+            result[i] = buffer[lo] * (1 - frac) + buffer[hi] * frac;
+        }
+        return result;
+    }
+
+    // Worker فائق السرعة — chunk كبير جداً + تقليل رسائل progress
+    function buildWasmWorkerCode() {
+        return `
+${wasmWorkerCode}
+// التأكد من توفر lamejs في نطاق Worker
+if (typeof lamejs === 'undefined' && typeof self.lamejs === 'undefined') {
+  // قد تكون المكتبة معرّفة كـ window في المتصفح الأصلي
+  // نحاول اكتشافها
   try {
-    const { PDFDocument } = PDFLib;
-    const pdfDoc = await PDFDocument.create();
-    let totalOriginalSize = 0;
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      totalOriginalSize += file.size;
-      progText.innerText = `⏳ جاري إضافة الصورة ${i + 1} من ${files.length}: ${file.name}`;
-      progFill.style.width = `${(i / files.length) * 90}%`;
-
-      const image = await embedImageInPdf(pdfDoc, file);
-      const page = pdfDoc.addPage([image.width, image.height]);
-      page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+    if (typeof globalThis.lamejs === 'undefined') {
+      // بعض إصدارات lamejs تُصدّر كـ module.exports
+      // Worker سيستخدم ما هو متاح
     }
-
-    progText.innerText = '⏳ جاري إنشاء ملف PDF النهائي...';
-    progFill.style.width = '95%';
-
-    const pdfBytes = await pdfDoc.save();
-    const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-
-    progFill.style.width = '100%';
-    progText.innerText = `✅ تم تحويل ${files.length} صورة إلى PDF بنجاح!`;
-
-    const fakeOriginal = { name: 'images_to_pdf.pdf', size: totalOriginalSize };
-    createResultItem('img2pdf-results', fakeOriginal, pdfBlob, '.pdf');
-
-  } catch (err) {
-    console.error(err);
-    showError('img2pdf-results', 'فشل تحويل الصور إلى PDF. تأكد أن جميع الملفات صور صالحة.');
-  } finally {
-    releaseWakeLock();
-    btn.disabled = false;
-    fileInput.disabled = false;
-    fileInput.value = '';
-    document.getElementById('img2pdf-drop-text').innerHTML = 'ارفع صورة أو أكثر';
-  }
-});
-
-// يضمّن الصورة داخل مستند PDF: PNG مباشرة، JPEG مباشرة، وأي صيغة أخرى (WebP...) عبر تحويلها لـ JPEG بالكانفاس أولاً
-async function embedImageInPdf(pdfDoc, file) {
-  if (file.type === 'image/png') {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    return pdfDoc.embedPng(bytes);
-  }
-  if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    return pdfDoc.embedJpg(bytes);
-  }
-
-  // أي صيغة أخرى (WebP, GIF ثابت, إلخ) → تحويل عبر Canvas إلى JPEG
-  const imgUrl = URL.createObjectURL(file);
-  const imgEl = await new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('تعذرت قراءة الصورة: ' + file.name));
-    img.src = imgUrl;
-  });
-
-  const canvas = document.createElement('canvas');
-  canvas.width = imgEl.width;
-  canvas.height = imgEl.height;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(imgEl, 0, 0);
-  URL.revokeObjectURL(imgUrl);
-
-  const jpegBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
-  const jpegBytes = new Uint8Array(await jpegBlob.arrayBuffer());
-  return pdfDoc.embedJpg(jpegBytes);
+  } catch(_) {}
 }
+var lameLib = (typeof lamejs !== 'undefined') ? lamejs : (self.lamejs || null);
 
-// ==========================================
-// 11. ضغط الصوت إلى MP3 (lamejs)
-// ==========================================
-document.getElementById('audio-btn').addEventListener('click', async function() {
-  const fileInput = document.getElementById('audio-input');
-  const file = fileInput.files[0];
-  const btn = this;
-  const resultsArea = document.getElementById('audio-results');
-  const progContainer = document.getElementById('audio-progress');
-  const progFill = document.getElementById('audio-fill');
-  const progText = document.getElementById('audio-text');
-
-  if (!state.audio || typeof lamejs === 'undefined') {
-    alert('مكتبة lamejs غير مفعلة. فعّلها أولاً من تبويب المكتبات.');
-    return;
-  }
-  if (!file) {
-    alert('يرجى اختيار ملف صوتي أولاً.');
-    return;
-  }
-
-  resultsArea.innerHTML = '';
-  btn.disabled = true;
-  fileInput.disabled = true;
-  progContainer.classList.add('show');
-  progFill.style.width = '0%';
-  progText.innerText = '⏳ جاري قراءة الملف الصوتي...';
-  await requestWakeLock();
-
+self.onmessage = function(e) {
+  var d = e.data;
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    const audioCtx = new AudioContextClass();
-    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    var leftF32   = d.leftF32;
+    var rightF32  = d.rightF32 || null;
+    var sampleRate= d.sampleRate;
+    var channels  = d.channels;
+    var kbps      = d.kbps || 128;
+    var mode      = d.mode || 'cbr';
+    var vbrQual   = d.vbrQuality || 4;
 
-    progText.innerText = '⏳ جاري ترميز MP3...';
-    progFill.style.width = '30%';
+    if (!lameLib || !lameLib.Mp3Encoder) {
+      self.postMessage({ type: 'error', message: 'lamejs غير متوفر داخل Worker' });
+      return;
+    }
 
-    const channels = Math.min(audioBuffer.numberOfChannels, 2);
-    const sampleRate = audioBuffer.sampleRate;
-    const kbps = 128;
+    // تحويل Float32 → Int16 داخل Worker لتجنب نقل بيانات ضخمة
+    function f32ToI16(f32) {
+      var i16 = new Int16Array(f32.length);
+      for (var i = 0; i < f32.length; i++) {
+        var s = f32[i] < -1 ? -1 : f32[i] > 1 ? 1 : f32[i];
+        i16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return i16;
+    }
 
-    const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, kbps);
-    const mp3Data = [];
+    var leftPCM  = f32ToI16(leftF32);
+    var rightPCM = rightF32 ? f32ToI16(rightF32) : null;
 
-    const left = floatTo16BitPCM(audioBuffer.getChannelData(0));
-    const right = channels > 1 ? floatTo16BitPCM(audioBuffer.getChannelData(1)) : null;
+    var enc = new lameLib.Mp3Encoder(channels, sampleRate, kbps);
 
-    const blockSize = 1152;
-    const totalSamples = left.length;
+    // تهيئة VBR إن طُلب (lamejs يدعم setVBRQuality)
+    if (mode === 'vbr' && typeof enc.setVBRQuality === 'function') {
+      try { enc.setVBRQuality(vbrQual); } catch(_) {}
+    }
 
-    for (let i = 0; i < totalSamples; i += blockSize) {
-      const leftChunk = left.subarray(i, i + blockSize);
-      let mp3buf;
-      if (right) {
-        const rightChunk = right.subarray(i, i + blockSize);
-        mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+    var chunks = [];
+    var totalBytes = 0;
+    // ★ chunk ضخم جداً = 1152 * 256 = 294,912 عينة/دفعة
+    // هذا يقلل overhead استدعاء الدوال بشكل هائل
+    var bs = 1152 * 256;
+    var total = leftPCM.length;
+    var lastReportPct = -1;
+
+    for (var i = 0; i < total; i += bs) {
+      var lc = leftPCM.subarray(i, Math.min(i + bs, total));
+      var buf;
+      if (channels > 1 && rightPCM) {
+        var rc = rightPCM.subarray(i, Math.min(i + bs, total));
+        buf = enc.encodeBuffer(lc, rc);
       } else {
-        mp3buf = mp3encoder.encodeBuffer(leftChunk);
+        buf = enc.encodeBuffer(lc);
       }
-      if (mp3buf.length > 0) mp3Data.push(mp3buf);
-
-      if (i % (blockSize * 200) === 0) {
-        const pct = Math.min(95, 30 + Math.round((i / totalSamples) * 65));
-        progFill.style.width = pct + '%';
-        progText.innerText = `⏳ جاري الترميز... ${pct}%`;
-        await new Promise(r => setTimeout(r, 0));
+      if (buf && buf.length > 0) {
+        chunks.push(new Uint8Array(buf));
+        totalBytes += buf.length;
+      }
+      // ★ إرسال progress كل 3% فقط لتقليل overhead الرسائل
+      var pct = Math.min(95, Math.round((i / total) * 100));
+      if (pct >= lastReportPct + 3) {
+        self.postMessage({ type: 'progress', pct: pct });
+        lastReportPct = pct;
       }
     }
 
-    const endBuf = mp3encoder.flush();
-    if (endBuf.length > 0) mp3Data.push(endBuf);
+    var end = enc.flush();
+    if (end && end.length > 0) {
+      chunks.push(new Uint8Array(end));
+      totalBytes += end.length;
+    }
 
-    const mp3Blob = new Blob(mp3Data, { type: 'audio/mp3' });
+    // ★ تجميع النتيجة في buffer واحد
+    var result = new Uint8Array(totalBytes);
+    var off = 0;
+    for (var c = 0; c < chunks.length; c++) {
+      result.set(chunks[c], off);
+      off += chunks[c].length;
+    }
 
-    progFill.style.width = '100%';
-    progText.innerText = '✅ اكتمل الضغط!';
-
-    createResultItem('audio-results', file, mp3Blob, '.mp3');
-    audioCtx.close();
-
-  } catch (err) {
-    console.error(err);
-    showError('audio-results', 'فشل ضغط الملف الصوتي. تأكد أن الملف بصيغة صوتية صالحة ومدعومة من المتصفح (MP3, WAV, OGG...).');
-  } finally {
-    releaseWakeLock();
-    btn.disabled = false;
-    fileInput.disabled = false;
-    fileInput.value = '';
-    document.getElementById('audio-drop-text').innerHTML = 'ارفع ملف صوتي';
+    self.postMessage({ type: 'done', result: result }, [result.buffer]);
+  } catch(err) {
+    self.postMessage({ type: 'error', message: err.message || String(err) });
   }
-});
+};`;
+    }
 
-function floatTo16BitPCM(floatArray) {
-  const output = new Int16Array(floatArray.length);
-  for (let i = 0; i < floatArray.length; i++) {
-    const s = Math.max(-1, Math.min(1, floatArray[i]));
-    output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-  }
-  return output;
-}
+    // Worker التقليدي — أيضاً محسّن
+    function buildWorkerCode() {
+        return `
+${lamejsCode}
+var lameLib = (typeof lamejs !== 'undefined') ? lamejs : (self.lamejs || null);
 
-// ==========================================
-// 12. ضغط الفيديو (FFmpeg.wasm)
-// ==========================================
-let ffmpegInstance = null;
-
-document.getElementById('video-btn').addEventListener('click', async function() {
-  const fileInput = document.getElementById('video-input');
-  const file = fileInput.files[0];
-  const btn = this;
-  const resultsArea = document.getElementById('video-results');
-  const progContainer = document.getElementById('video-progress');
-  const progFill = document.getElementById('video-fill');
-  const progText = document.getElementById('video-text');
-
-  if (!state.video || typeof FFmpegWASM === 'undefined') {
-    alert('مكتبة FFmpeg.wasm غير مفعلة. فعّلها أولاً من تبويب المكتبات.');
-    return;
-  }
-  if (!file) {
-    alert('يرجى اختيار ملف فيديو أولاً.');
-    return;
-  }
-
-  resultsArea.innerHTML = '';
-  btn.disabled = true;
-  fileInput.disabled = true;
-  progContainer.classList.add('show');
-  progFill.style.width = '0%';
-  progText.innerText = '⏳ جاري تجهيز محرك الترميز (أول مرة قد تأخذ وقتاً)...';
-  await requestWakeLock();
-
+self.onmessage = function(e) {
+  var d = e.data;
   try {
-    if (!ffmpegInstance) {
-      const { FFmpeg } = FFmpegWASM;
-      ffmpegInstance = new FFmpeg();
-      ffmpegInstance.on('progress', ({ progress }) => {
-        const pct = Math.min(99, Math.round(progress * 100));
-        progFill.style.width = pct + '%';
-        progText.innerText = `⏳ جاري ضغط الفيديو... ${pct}%`;
-      });
+    var leftPCM   = d.leftPCM;
+    var rightPCM  = d.rightPCM || null;
+    var sampleRate= d.sampleRate;
+    var channels  = d.channels;
+    var kbps      = d.kbps || 128;
+    var mode      = d.mode || 'cbr';
+    var vbrQual   = d.vbrQuality || 4;
 
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-      await ffmpegInstance.load({
-        coreURL: await window.FFmpegUtil.toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await window.FFmpegUtil.toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-      });
+    if (!lameLib || !lameLib.Mp3Encoder) {
+      self.postMessage({ type: 'error', message: 'lamejs غير متوفر داخل Worker' });
+      return;
     }
 
-    const inputName = 'input' + (getFileNameInfo(file.name).ext || '.mp4');
-    const outputName = 'output.mp4';
+    var enc = new lameLib.Mp3Encoder(channels, sampleRate, kbps);
+    if (mode === 'vbr' && typeof enc.setVBRQuality === 'function') {
+      try { enc.setVBRQuality(vbrQual); } catch(_) {}
+    }
 
-    progText.innerText = '⏳ جاري تحميل الملف للمعالج...';
-    const fileData = await file.arrayBuffer();
-    await ffmpegInstance.writeFile(inputName, new Uint8Array(fileData));
+    var data = [];
+    var totalBytes = 0;
+    var bs = 1152 * 256;
+    var total = leftPCM.length;
+    var lastReportPct = -1;
 
-    progText.innerText = '⏳ جاري ضغط الفيديو (قد يستغرق دقائق حسب طول الفيديو)...';
-    await ffmpegInstance.exec([
-      '-i', inputName,
-      '-vcodec', 'libx264',
-      '-crf', '28',
-      '-preset', 'veryfast',
-      '-acodec', 'aac',
-      '-b:a', '128k',
-      outputName
-    ]);
+    for (var i = 0; i < total; i += bs) {
+      var lc = leftPCM.subarray(i, Math.min(i + bs, total));
+      var buf;
+      if (channels > 1 && rightPCM) {
+        buf = enc.encodeBuffer(lc, rightPCM.subarray(i, Math.min(i + bs, total)));
+      } else {
+        buf = enc.encodeBuffer(lc);
+      }
+      if (buf && buf.length > 0) {
+        data.push(new Uint8Array(buf));
+        totalBytes += buf.length;
+      }
+      var pct = Math.min(95, Math.round((i / total) * 100));
+      if (pct >= lastReportPct + 3) {
+        self.postMessage({ type: 'progress', pct: pct });
+        lastReportPct = pct;
+      }
+    }
 
-    const outputData = await ffmpegInstance.readFile(outputName);
-    const videoBlob = new Blob([outputData.buffer], { type: 'video/mp4' });
+    var end = enc.flush();
+    if (end && end.length > 0) {
+      data.push(new Uint8Array(end));
+      totalBytes += end.length;
+    }
 
-    progFill.style.width = '100%';
-    progText.innerText = '✅ اكتمل الضغط!';
-
-    createResultItem('video-results', file, videoBlob, '.mp4');
-
-    try {
-      await ffmpegInstance.deleteFile(inputName);
-      await ffmpegInstance.deleteFile(outputName);
-    } catch (cleanupErr) { /* تجاهل أخطاء التنظيف */ }
-
-  } catch (err) {
-    console.error(err);
-    showError('video-results', 'فشل ضغط الفيديو. غالباً السبب أن الصفحة لا تعمل ضمن بيئة Cross-Origin Isolated (مطلوبة لـ FFmpeg.wasm)، أو أن الملف كبير جداً على ذاكرة الهاتف.');
-  } finally {
-    releaseWakeLock();
-    btn.disabled = false;
-    fileInput.disabled = false;
-    fileInput.value = '';
-    document.getElementById('video-drop-text').innerHTML = 'ارفع فيديو للضغط';
+    var result = new Uint8Array(totalBytes);
+    var off = 0;
+    for (var c = 0; c < data.length; c++) {
+      result.set(data[c], off);
+      off += data[c].length;
+    }
+    self.postMessage({ type: 'done', result: result }, [result.buffer]);
+  } catch(err) {
+    self.postMessage({ type: 'error', message: err.message || String(err) });
   }
-});
+};`;
+    }
+
+    // قراءة AudioBuffer عبر OfflineAudioContext (أفضل لفك التشفير)
+    async function decodeAudio(arrayBuffer, targetSampleRate) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        // نحاول أولاً decodeAudioData العادي
+        const ctx = new AC();
+        let audioBuf;
+        try {
+            audioBuf = await ctx.decodeAudioData(arrayBuffer.slice(0));
+        } catch (e) {
+            await ctx.close();
+            throw new Error('تعذر فك تشفير الصوت. تأكد أن الملف بصيغة مدعومة (MP3, WAV, OGG, M4A, AAC).');
+        }
+        await ctx.close();
+
+        // Downsampling إن طُلب
+        if (targetSampleRate && targetSampleRate !== 'original') {
+            const target = parseInt(targetSampleRate, 10);
+            if (target < audioBuf.sampleRate) {
+                const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+                const numCh = audioBuf.numberOfChannels;
+                const newLen = Math.ceil(audioBuf.duration * target);
+                const offCtx = new OAC(numCh, newLen, target);
+                const src = offCtx.createBufferSource();
+                src.buffer = audioBuf;
+                src.connect(offCtx.destination);
+                src.start(0);
+                audioBuf = await offCtx.startRendering();
+            }
+        }
+        return audioBuf;
+    }
+
+    async function processAudio(file, progContainerId, progFillId, progTextId, resultsId, cancelBtnId, btn, fi, dropTextId, opts) {
+        if (!state.audio && !state.audioWasm) {
+            showToast('⚠️ لا توجد مكتبة صوت مفعلة. فعلها من قسم المكتبات.');
+            return;
+        }
+        if (!file) { showToast('⚠️ اختر ملفاً.'); return; }
+
+        const kbps = (opts && opts.kbps) || 128;
+        const channelsOpt = (opts && opts.channels) || 'auto';
+        const srOpt = (opts && opts.sampleRate) || 'original';
+        const mode = (opts && opts.mode) || 'cbr';
+
+        const pc = document.getElementById(progContainerId);
+        const pf = document.getElementById(progFillId);
+        const pt = document.getElementById(progTextId);
+        const cb = document.getElementById(cancelBtnId);
+        document.getElementById(resultsId).innerHTML = '';
+        btn.disabled = true;
+        fi.disabled = true;
+        pc.classList.add('show');
+        pf.style.width = '0%';
+        pt.innerText = '⏳ قراءة الملف...';
+        cb.style.display = 'inline-flex';
+        globalCancel = false;
+        requestWakeLock();
+
+        const startTime = performance.now();
+
+        try {
+            const ab = await new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onload = () => res(reader.result);
+                reader.onerror = () => rej(new Error('تعذرت قراءة الملف.'));
+                reader.readAsArrayBuffer(file);
+            });
+            if (globalCancel) throw new Error('تم الإلغاء');
+
+            pt.innerText = '⏳ فك تشفير الصوت...';
+            pf.style.width = '3%';
+            const audioBuf = await decodeAudio(ab, srOpt);
+            if (globalCancel) throw new Error('تم الإلغاء');
+
+            const origCh = audioBuf.numberOfChannels;
+            const ch = channelsOpt === 'auto' ? Math.min(origCh, 2) : parseInt(channelsOpt, 10);
+            const sr = audioBuf.sampleRate;
+            const duration = audioBuf.duration;
+
+            let mp3Blob;
+            let encoderLabel = '';
+
+            // === المسار السريع: Worker مع lamejs ===
+            if (state.audioWasm && wasmWorkerCode) {
+                encoderLabel = 'Worker⚡';
+                pt.innerText = '⏳ تجهيز Worker فائق السرعة...';
+                pf.style.width = '5%';
+
+                let leftF32, rightF32;
+                if (ch === 1 && origCh >= 2) {
+                    // دمج القناتين إلى mono
+                    leftF32 = mergeToMono(audioBuf.getChannelData(0), audioBuf.getChannelData(1));
+                    rightF32 = null;
+                } else if (ch === 1) {
+                    leftF32 = audioBuf.getChannelData(0);
+                    rightF32 = null;
+                } else {
+                    leftF32 = audioBuf.getChannelData(0);
+                    rightF32 = origCh > 1 ? audioBuf.getChannelData(1) : null;
+                }
+
+                const workerBlob = new Blob([buildWasmWorkerCode()], { type: 'application/javascript' });
+                const workerUrl  = URL.createObjectURL(workerBlob);
+                const worker = new Worker(workerUrl);
+                currentWorker = worker;
+
+                // VBR quality mapping (0=أفضل، 9=أسوأ) — نربطها بـ kbps
+                const vbrQualMap = { 320: 0, 256: 1, 192: 2, 160: 3, 128: 4, 112: 5, 96: 6, 80: 7, 64: 8, 56: 9, 48: 9, 32: 9 };
+                const vbrQuality = vbrQualMap[kbps] !== undefined ? vbrQualMap[kbps] : 4;
+
+                // ★ نقل ArrayBuffer عبر transferable لتجنب النسخ
+                const transferList = [leftF32.buffer];
+                if (rightF32) transferList.push(rightF32.buffer);
+
+                worker.postMessage({
+                    leftF32: leftF32,
+                    rightF32: rightF32,
+                    sampleRate: sr,
+                    channels: ch,
+                    kbps: kbps,
+                    mode: mode,
+                    vbrQuality: vbrQuality
+                }, transferList);
+
+                mp3Blob = await new Promise((resolve, reject) => {
+                    worker.onmessage = function(evt) {
+                        const msg = evt.data;
+                        if (msg.type === 'progress') {
+                            pf.style.width = (8 + msg.pct * 0.90) + '%';
+                            pt.innerText = `⏳ ${encoderLabel} يُشفّر... ${msg.pct}%`;
+                        } else if (msg.type === 'done') {
+                            resolve(new Blob([msg.result], { type: 'audio/mpeg' }));
+                        } else if (msg.type === 'error') {
+                            reject(new Error(msg.message));
+                        }
+                    };
+                    worker.onerror = (err) => reject(new Error(err.message || 'خطأ في Worker'));
+                });
+                try { worker.terminate(); } catch(_) {}
+                currentWorker = null;
+                URL.revokeObjectURL(workerUrl);
+
+            // === المسار البديل: lamejs تقليدي في Worker ===
+            } else if (state.audio && lamejsCode) {
+                encoderLabel = 'Worker';
+                pt.innerText = '⏳ تجهيز التشفير...';
+                pf.style.width = '5%';
+
+                let leftPCM, rightPCM;
+                if (ch === 1 && origCh >= 2) {
+                    const monoF32 = mergeToMono(audioBuf.getChannelData(0), audioBuf.getChannelData(1));
+                    leftPCM = floatTo16BitPCM(monoF32);
+                    rightPCM = null;
+                } else if (ch === 1) {
+                    leftPCM = floatTo16BitPCM(audioBuf.getChannelData(0));
+                    rightPCM = null;
+                } else {
+                    leftPCM = floatTo16BitPCM(audioBuf.getChannelData(0));
+                    rightPCM = origCh > 1 ? floatTo16BitPCM(audioBuf.getChannelData(1)) : null;
+                }
+
+                const wc = buildWorkerCode();
+                const wb = new Blob([wc], { type: 'application/javascript' });
+                const wu = URL.createObjectURL(wb);
+                const worker = new Worker(wu);
+                currentWorker = worker;
+
+                const vbrQualMap = { 320: 0, 256: 1, 192: 2, 160: 3, 128: 4, 112: 5, 96: 6, 80: 7, 64: 8 };
+                const vbrQuality = vbrQualMap[kbps] !== undefined ? vbrQualMap[kbps] : 4;
+
+                const transferList = [leftPCM.buffer];
+                if (rightPCM) transferList.push(rightPCM.buffer);
+
+                worker.postMessage({
+                    leftPCM: leftPCM,
+                    rightPCM: rightPCM,
+                    sampleRate: sr,
+                    channels: ch,
+                    kbps: kbps,
+                    mode: mode,
+                    vbrQuality: vbrQuality
+                }, transferList);
+
+                mp3Blob = await new Promise((resolve, reject) => {
+                    worker.onmessage = function(evt) {
+                        const msg = evt.data;
+                        if (msg.type === 'progress') {
+                            pf.style.width = (8 + msg.pct * 0.88) + '%';
+                            pt.innerText = `⏳ ${encoderLabel} يرمّز... ${msg.pct}%`;
+                        } else if (msg.type === 'done') {
+                            resolve(new Blob([msg.result], { type: 'audio/mpeg' }));
+                        } else if (msg.type === 'error') {
+                            reject(new Error(msg.message));
+                        }
+                    };
+                    worker.onerror = (err) => reject(new Error(err.message || 'خطأ في Worker'));
+                });
+                try { worker.terminate(); } catch(_) {}
+                currentWorker = null;
+                URL.revokeObjectURL(wu);
+
+            } else {
+                throw new Error('لا توجد مكتبة صوت قابلة للاستخدام.');
+            }
+
+            if (globalCancel) throw new Error('تم الإلغاء');
+
+            const elapsed = (performance.now() - startTime) / 1000;
+            const speedRatio = duration > 0 ? (duration / elapsed).toFixed(1) : '∞';
+
+            pf.style.width = '100%';
+            pt.innerText = `✅ تم الضغط! (${speedRatio}× أسرع من الوقت الحقيقي) [${encoderLabel}]`;
+
+            const extraInfo = `${formatDuration(duration)} · ${kbps}kbps · ${ch === 1 ? 'mono' : 'stereo'} · ${sr/1000}kHz`;
+            createResultItem(resultsId, file, mp3Blob, '.mp3', extraInfo);
+        } catch (err) {
+            if (err.message === 'تم الإلغاء') {
+                pt.innerText = '🚫 تم الإلغاء.';
+                showToast('🚫 تم إلغاء العملية.');
+            } else {
+                showError(resultsId, `فشل: ${err.message}`);
+                pt.innerText = '❌ حدث خطأ';
+            }
+        } finally {
+            releaseWakeLock();
+            btn.disabled = false;
+            fi.disabled = false;
+            fi.value = '';
+            if (document.getElementById(dropTextId))
+                document.getElementById(dropTextId).innerHTML = 'ارفع ملف';
+            cb.style.display = 'none';
+            globalCancel = false;
+            if (currentWorker) {
+                try { currentWorker.terminate(); } catch(_) {}
+                currentWorker = null;
+            }
+        }
+    }
+
+    document.getElementById('audio-btn').addEventListener('click', function () {
+        const kbps = parseInt(document.querySelector('input[name="audio-kbps"]:checked').value, 10);
+        const channels = document.querySelector('input[name="audio-channels"]:checked').value;
+        const sampleRate = document.querySelector('input[name="audio-sr"]:checked').value;
+        const mode = document.querySelector('input[name="audio-mode"]:checked').value;
+        processAudio(
+            document.getElementById('audio-input').files[0],
+            'audio-progress', 'audio-fill', 'audio-text', 'audio-results',
+            'audio-cancel-btn', this, document.getElementById('audio-input'), 'audio-drop-text',
+            { kbps, channels, sampleRate, mode }
+        );
+    });
+    document.getElementById('vid2audio-btn').addEventListener('click', function () {
+        const kbps = parseInt(document.querySelector('input[name="vid-audio-kbps"]:checked').value, 10);
+        const channels = document.querySelector('input[name="vid-audio-channels"]:checked').value;
+        processAudio(
+            document.getElementById('vid2audio-input').files[0],
+            'vid2audio-progress', 'vid2audio-fill', 'vid2audio-text', 'vid2audio-results',
+            'vid2audio-cancel-btn', this, document.getElementById('vid2audio-input'), 'vid2audio-drop-text',
+            { kbps, channels, sampleRate: 'original', mode: 'cbr' }
+        );
+    });
+
+    // ========== 12. VIDEO COMPRESSION ==========
+    let ffmpegInst = null;
+
+    async function getFFmpeg(pt) {
+        if (!ffmpegInst) {
+            const FFmpegLib = window.FFmpegWASM || window.FFmpeg;
+            if (!FFmpegLib || !FFmpegLib.FFmpeg)
+                throw new Error('مكتبة FFmpeg غير مُحمّلة. ارجع لتبويب المكتبات وفعّلها أولاً.');
+            const { FFmpeg } = FFmpegLib;
+            ffmpegInst = new FFmpeg();
+            const bu = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+            pt.innerText = '⏳ تجهيز محرك الترميز (أول مرة — قد يستغرق دقائق)...';
+            const FFmpegUtil = window.FFmpegUtil;
+            if (!FFmpegUtil || !FFmpegUtil.toBlobURL)
+                throw new Error('مكتبة FFmpegUtil غير مُحمّلة بشكل صحيح.');
+            await ffmpegInst.load({
+                coreURL: await FFmpegUtil.toBlobURL(`${bu}/ffmpeg-core.js`,   'text/javascript'),
+                wasmURL: await FFmpegUtil.toBlobURL(`${bu}/ffmpeg-core.wasm`, 'application/wasm'),
+            });
+        }
+        return ffmpegInst;
+    }
+
+    document.getElementById('video-btn').addEventListener('click', async function () {
+        const fi = document.getElementById('video-input');
+        const file = fi.files[0];
+        const btn = this;
+        const ra = document.getElementById('video-results');
+        const pc = document.getElementById('video-progress');
+        const pf = document.getElementById('video-fill');
+        const pt = document.getElementById('video-text');
+        const cb = document.getElementById('video-cancel-btn');
+
+        const FFmpegLib = window.FFmpegWASM || window.FFmpeg;
+        if (!state.video || !FFmpegLib) { showToast('⚠️ مكتبة FFmpeg غير مفعلة.'); return; }
+        if (!file) { showToast('⚠️ اختر فيديو.'); return; }
+        ra.innerHTML = '';
+        btn.disabled = true;
+        fi.disabled = true;
+        pc.classList.add('show');
+        pf.style.width = '0%';
+        cb.style.display = 'inline-flex';
+        globalCancel = false;
+        await requestWakeLock();
+        try {
+            const ff = await getFFmpeg(pt);
+            ff.off('progress');
+            ff.on('progress', ({ progress }) => {
+                if (globalCancel) return;
+                const pct = Math.min(99, Math.round(progress * 100));
+                pf.style.width = pct + '%';
+                pt.innerText = `⏳ ضغط الفيديو... ${pct}%`;
+            });
+            const inName  = 'input' + (getFileNameInfo(file.name).ext || '.mp4');
+            const outName = 'output.mp4';
+            pt.innerText = '⏳ تحميل الملف...';
+            await ff.writeFile(inName, new Uint8Array(await file.arrayBuffer()));
+            if (globalCancel) throw new Error('تم الإلغاء');
+            pt.innerText = '⏳ الضغط جارٍ...';
+            await ff.exec(['-i', inName, '-vcodec', 'libx264', '-crf', '28', '-preset', 'veryfast', '-acodec', 'aac', '-b:a', '128k', outName]);
+            if (globalCancel) throw new Error('تم الإلغاء');
+            const od = await ff.readFile(outName);
+            const blob = new Blob([od.buffer], { type: 'video/mp4' });
+            pf.style.width = '100%';
+            pt.innerText = '✅ اكتمل الضغط!';
+            createResultItem('video-results', file, blob, '.mp4');
+            try { await ff.deleteFile(inName); await ff.deleteFile(outName); } catch (_) {}
+        } catch (err) {
+            if (err.message === 'تم الإلغاء') { pt.innerText = '🚫 تم الإلغاء.'; showToast('🚫 تم إلغاء ضغط الفيديو.'); }
+            else showError('video-results', `فشل الضغط: ${err.message || 'قد لا تعمل في هذه البيئة. جرّب متصفح Chrome.'}`);
+        } finally {
+            releaseWakeLock();
+            btn.disabled = false;
+            fi.disabled = false;
+            fi.value = '';
+            document.getElementById('video-drop-text').innerHTML = 'ارفع فيديو للضغط';
+            cb.style.display = 'none';
+            globalCancel = false;
+        }
+    });
+
+    console.log('✅ Pro Media Tools — مُحسّن للسرعة القصوى.');
+})();
 </script>
 </body>
 </html>
