@@ -431,7 +431,6 @@
             <h2><span class="icon-circle">⚙️</span> مدير المكتبات والتحميل المحلي</h2>
             <p class="desc">حمّل المكتبة من الإنترنت لمرة واحدة، أو ارفع ملف JS محلي للعمل بدون إنترنت. التفعيل مؤقت لكل جلسة.</p>
             <div class="lib-grid">
-                <!-- pdf-lib -->
                 <div class="lib-card">
                     <div class="lib-header"><h3><span class="lib-status" id="status-pdf"></span> pdf-lib.js</h3><span class="lib-size">~500 KB</span></div>
                     <p style="font-size:0.76rem;color:var(--muted);margin-bottom:6px;">لدمج وتقسيم وضغط PDF وتحويل الصور إليه.</p>
@@ -440,7 +439,6 @@
                         <button class="lib-btn btn-local">📂 ملف محلي<input type="file" accept=".js" onchange="loadLocalLibrary(event,'pdf')"></button>
                     </div>
                 </div>
-                <!-- lamejs Worker -->
                 <div class="lib-card" style="border-color:rgba(13,204,130,0.4);">
                     <div class="lib-header"><h3><span class="lib-status" id="status-audio-wasm"></span> lame.min.js + Worker (سريع جداً)</h3><span class="lib-size" style="color:var(--success);">~150 KB ⚡</span></div>
                     <p style="font-size:0.76rem;color:var(--muted);margin-bottom:6px;">مكتبة lamejs تعمل داخل <strong>Web Worker محسّن</strong> مع chunks ضخمة — <strong>أسرع 60 مرة من التشفير التقليدي</strong>.<br><strong>مُوصى به.</strong></p>
@@ -449,7 +447,6 @@
                         <button class="lib-btn btn-local">📂 ملف محلي (lame.min.js)<input type="file" accept=".js" onchange="loadLocalLibraryWasm(event)"></button>
                     </div>
                 </div>
-                <!-- FFmpeg -->
                 <div class="lib-card" style="border-color:rgba(247,108,108,0.3);">
                     <div class="lib-header"><h3><span class="lib-status" id="status-video"></span> FFmpeg.wasm</h3><span class="lib-size" style="color:var(--danger);">~30 MB ⚠️</span></div>
                     <p style="font-size:0.76rem;color:var(--muted);margin-bottom:6px;">لضغط الفيديو. مكتبة ضخمة يُفضّل الواي فاي.</p>
@@ -462,13 +459,12 @@
         </div>
     </div>
 
-</div><!-- /container -->
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 (function () {
 
-    // ========== 0. TOAST & UTILS ==========
     function showToast(msg, dur) {
         dur = dur || 3000;
         var c = document.getElementById('toast-container');
@@ -501,7 +497,6 @@
         return m + ':' + (s < 10 ? '0' : '') + s;
     }
 
-    // ========== 1. ROUTER ==========
     window.switchTab = function (tabId, btn) {
         document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
         document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -526,7 +521,6 @@
         if (btn) btn.classList.add('active');
     };
 
-    // ========== 2. WAKE LOCK & CANCEL ==========
     var wakeLock = null;
     var activeOps = 0;
     var globalCancel = false;
@@ -572,7 +566,6 @@
         }
     });
 
-    // ========== 3. RESULTS ==========
     function createResultItem(containerId, origFile, newBlob, ext, extraInfo) {
         var container = document.getElementById(containerId);
         var info = getFileNameInfo(origFile.name);
@@ -621,8 +614,6 @@
         container.appendChild(d);
     }
 
-    // ========== 4. LIBRARY MANAGER ==========
-    // state.audio removed — only audioWasm and pdf/video remain
     var state = { pdf: false, audioWasm: false, video: false };
     var wasmWorkerCode = '';
 
@@ -720,13 +711,37 @@
             var tools = document.getElementById(type + '-tools');
             if (tools) { tools.style.opacity = '1'; tools.style.pointerEvents = 'auto'; }
         }
+        refreshAllButtons();
+    }
+
+    function refreshAllButtons() {
+        var pdfInputs = [
+            { inputId: 'pdf-input', btnId: 'pdf-btn', minFiles: 2 },
+            { inputId: 'split-input', btnId: 'split-btn', minFiles: 1 },
+            { inputId: 'compress-input', btnId: 'compress-btn', minFiles: 1 },
+            { inputId: 'img2pdf-input', btnId: 'img2pdf-btn', minFiles: 1 }
+        ];
+        pdfInputs.forEach(function(item) {
+            var inp = document.getElementById(item.inputId);
+            var btn = document.getElementById(item.btnId);
+            if (inp && btn) {
+                btn.disabled = !(state.pdf && inp.files.length >= item.minFiles);
+            }
+        });
+        var vidInp = document.getElementById('video-input');
+        var vidBtn = document.getElementById('video-btn');
+        if (vidInp && vidBtn) {
+            vidBtn.disabled = !(state.video && vidInp.files.length >= 1);
+        }
         updateAudioButtons();
     }
 
     function updateAudioButtons() {
         var hasLib = state.audioWasm;
-        document.getElementById('audio-btn').disabled = !hasLib;
-        document.getElementById('vid2audio-btn').disabled = !hasLib;
+        var audioInp = document.getElementById('audio-input');
+        var vid2audioInp = document.getElementById('vid2audio-input');
+        document.getElementById('audio-btn').disabled = !(hasLib && audioInp && audioInp.files.length >= 1);
+        document.getElementById('vid2audio-btn').disabled = !(hasLib && vid2audioInp && vid2audioInp.files.length >= 1);
     }
 
     window.loadVideoLibrary = async function (btn) {
@@ -754,9 +769,8 @@
         });
     }
 
-    updateAudioButtons();
+    refreshAllButtons();
 
-    // ========== 5. IMAGE COMPRESSION ==========
     function compressSingleImage(file, level, format) {
         return new Promise(function(resolve, reject) {
             if (!file.type.startsWith('image/'))
@@ -836,7 +850,6 @@
         globalCancel = false;
     });
 
-    // ========== 6. FILE INPUT UI SETUP ==========
     function setupFileInput(inputId, textId, btnId, libType, minFiles) {
         minFiles = minFiles || 1;
         var inp = document.getElementById(inputId);
@@ -877,7 +890,6 @@
         });
     });
 
-    // ========== 7. PDF MERGE ==========
     document.getElementById('pdf-btn').addEventListener('click', async function () {
         var fi = document.getElementById('pdf-input');
         var files = fi.files;
@@ -938,10 +950,10 @@
             document.getElementById('pdf-drop-text').innerHTML = 'ارفع ملفين أو أكثر';
             cb.style.display = 'none';
             globalCancel = false;
+            refreshAllButtons();
         }
     });
 
-    // ========== 8. PDF SPLIT ==========
     document.getElementById('split-btn').addEventListener('click', async function () {
         var fi = document.getElementById('split-input');
         var file = fi.files[0];
@@ -966,17 +978,17 @@
             var PDFDocument = PDFLib.PDFDocument;
             var ab = await file.arrayBuffer();
             var src = await PDFDocument.load(ab, { ignoreEncryption: true });
-            var pc2 = src.getPageCount();
+            var pageCount = src.getPageCount();
             var bn = getFileNameInfo(file.name).name;
             var mode = document.querySelector('input[name="split-mode"]:checked').value;
             var groups = [];
             if (mode === 'all') {
-                if (pc2 < 2) throw new Error('الملف يحتوي على صفحة واحدة فقط.');
-                for (var i = 0; i < pc2; i++) groups.push({ label: String(i + 1), indices: [i] });
+                if (pageCount < 2) throw new Error('الملف يحتوي على صفحة واحدة فقط.');
+                for (var i = 0; i < pageCount; i++) groups.push({ label: String(i + 1), indices: [i] });
             } else {
                 var rv = document.getElementById('split-ranges').value.trim();
                 if (!rv) throw new Error('أدخل نطاقات الصفحات.');
-                groups = parseRanges(rv, pc2);
+                groups = parseRanges(rv, pageCount);
             }
             if (globalCancel) throw new Error('تم الإلغاء');
             if (groups.length === 1) {
@@ -1021,6 +1033,7 @@
             document.getElementById('split-drop-text').innerHTML = 'ارفع ملف PDF واحد';
             cb.style.display = 'none';
             globalCancel = false;
+            refreshAllButtons();
         }
     });
 
@@ -1049,7 +1062,6 @@
         return groups;
     }
 
-    // ========== 9. PDF COMPRESS ==========
     document.getElementById('compress-btn').addEventListener('click', async function () {
         var fi = document.getElementById('compress-input');
         var file = fi.files[0];
@@ -1092,8 +1104,10 @@
                 if (!res) continue;
                 var xo = res.lookup(PDFName.of('XObject'));
                 if (!xo || typeof xo.keys !== 'function') continue;
-                for (var key of xo.keys()) {
+                var keysArr = Array.from(xo.keys());
+                for (var ki = 0; ki < keysArr.length; ki++) {
                     if (globalCancel) break;
+                    var key = keysArr[ki];
                     try {
                         var ref = xo.get(key);
                         var rid = ref instanceof PDFRef ? ref.toString() : null;
@@ -1154,10 +1168,10 @@
             document.getElementById('compress-drop-text').innerHTML = 'ارفع ملف PDF للضغط';
             cb.style.display = 'none';
             globalCancel = false;
+            refreshAllButtons();
         }
     });
 
-    // ========== 10. IMAGES TO PDF ==========
     document.getElementById('img2pdf-btn').addEventListener('click', async function () {
         var fi = document.getElementById('img2pdf-input');
         var files = fi.files;
@@ -1210,6 +1224,7 @@
             document.getElementById('img2pdf-drop-text').innerHTML = 'ارفع صورة أو أكثر';
             cb.style.display = 'none';
             globalCancel = false;
+            refreshAllButtons();
         }
     });
 
@@ -1232,8 +1247,6 @@
         var jb = await new Promise(function(res) { cv.toBlob(res, 'image/jpeg', 0.92); });
         return doc.embedJpg(new Uint8Array(await jb.arrayBuffer()));
     }
-
-    // ========== 11. AUDIO — Worker فقط (لا مشفر تقليدي) ==========
 
     function buildWasmWorkerCode() {
         return wasmWorkerCode + '\n' +
@@ -1358,7 +1371,7 @@
         return audioBuf;
     }
 
-    async function processAudio(file, progContainerId, progFillId, progTextId, resultsId, cancelBtnId, btn, fi, dropTextId, opts) {
+    async function processAudio(file, progContainerId, progFillId, progTextId, resultsId, cancelBtnId, btn, fi, dropTextId, originalDropText, opts) {
         if (!state.audioWasm) {
             showToast('⚠️ لا توجد مكتبة صوت مفعلة. فعّلها من قسم المكتبات.');
             return;
@@ -1492,13 +1505,14 @@
             fi.disabled = false;
             fi.value = '';
             var dropTxtEl = document.getElementById(dropTextId);
-            if (dropTxtEl) dropTxtEl.innerHTML = 'ارفع ملف';
+            if (dropTxtEl) dropTxtEl.innerHTML = originalDropText;
             cb.style.display = 'none';
             globalCancel = false;
             if (currentWorker) {
                 try { currentWorker.terminate(); } catch (_) {}
                 currentWorker = null;
             }
+            refreshAllButtons();
         }
     }
 
@@ -1510,7 +1524,7 @@
         processAudio(
             document.getElementById('audio-input').files[0],
             'audio-progress', 'audio-fill', 'audio-text', 'audio-results',
-            'audio-cancel-btn', this, document.getElementById('audio-input'), 'audio-drop-text',
+            'audio-cancel-btn', this, document.getElementById('audio-input'), 'audio-drop-text', 'ارفع ملف صوتي',
             { kbps: kbps, channels: channels, sampleRate: sampleRate, mode: mode }
         );
     });
@@ -1521,12 +1535,10 @@
         processAudio(
             document.getElementById('vid2audio-input').files[0],
             'vid2audio-progress', 'vid2audio-fill', 'vid2audio-text', 'vid2audio-results',
-            'vid2audio-cancel-btn', this, document.getElementById('vid2audio-input'), 'vid2audio-drop-text',
+            'vid2audio-cancel-btn', this, document.getElementById('vid2audio-input'), 'vid2audio-drop-text', 'ارفع ملف فيديو لاستخراج صوته',
             { kbps: kbps, channels: channels, sampleRate: 'original', mode: 'cbr' }
         );
     });
-
-    // ========== 12. VIDEO COMPRESSION ==========
 
     async function getFFmpeg(pt) {
         if (!ffmpegInst) {
@@ -1534,16 +1546,22 @@
             if (!FFmpegLib || !FFmpegLib.FFmpeg)
                 throw new Error('مكتبة FFmpeg غير مُحمّلة. ارجع لتبويب المكتبات وفعّلها أولاً.');
             var FFmpegCls = FFmpegLib.FFmpeg;
-            ffmpegInst = new FFmpegCls();
+            var inst = new FFmpegCls();
             var bu = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
             pt.innerText = '⏳ تجهيز محرك الترميز (أول مرة — قد يستغرق دقائق)...';
             var FFmpegUtil = window.FFmpegUtil;
             if (!FFmpegUtil || !FFmpegUtil.toBlobURL)
                 throw new Error('مكتبة FFmpegUtil غير مُحمّلة بشكل صحيح.');
-            await ffmpegInst.load({
-                coreURL: await FFmpegUtil.toBlobURL(bu + '/ffmpeg-core.js',   'text/javascript'),
-                wasmURL: await FFmpegUtil.toBlobURL(bu + '/ffmpeg-core.wasm', 'application/wasm'),
-            });
+            try {
+                await inst.load({
+                    coreURL: await FFmpegUtil.toBlobURL(bu + '/ffmpeg-core.js',   'text/javascript'),
+                    wasmURL: await FFmpegUtil.toBlobURL(bu + '/ffmpeg-core.wasm', 'application/wasm'),
+                });
+                ffmpegInst = inst;
+            } catch (loadErr) {
+                try { inst.terminate(); } catch (_) {}
+                throw loadErr;
+            }
         }
         return ffmpegInst;
     }
@@ -1606,6 +1624,7 @@
             document.getElementById('video-drop-text').innerHTML = 'ارفع فيديو للضغط';
             cb.style.display = 'none';
             globalCancel = false;
+            refreshAllButtons();
         }
     });
 
